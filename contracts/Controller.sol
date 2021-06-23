@@ -22,7 +22,7 @@ contract Controller {
         uint8 ethIndex
     ) external returns (uint256[] memory amountsMoved) {
         // Should be adapter
-        if(ethIndex < 255) {
+        if (ethIndex < 255) {
             // Convert ETH to WETH
         }
 
