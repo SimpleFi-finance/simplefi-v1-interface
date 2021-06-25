@@ -3,166 +3,370 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "./IAdapter.sol";
+import "./utils/SafeERC20.sol";
 
 contract Controller {
+    using SafeERC20 for IERC20;
+
+    uint256 constant ratioPrecision = 10000;
+
     // Mapping of market address to protocol name
     mapping(address => bytes32) public marketProtocolName;
 
     // Mapping of protocol name to adapter address
     mapping(bytes32 => address) public protocolAdapterAddress;
 
-    // Mapping of market address to tokens that the market accepts, mints or transfers
-    mapping(address => address[]) public marketInputTokens;
-    mapping(address => address) public marketOutputToken;
-    mapping(address => address[]) public marketRewardTokens;
-    mapping(address => address) public marketWETH;
+    // Market parameters
+    struct Market {
+        address market;
+        address outputToken;
+        address weth;
+        address[] inputTokens;
+        address[] rewardTokens;
+    }
 
-    function migrate(
+    mapping(address => Market) public markets;
+
+    // TODO add security check
+    function addProtocolAdapter(bytes32 name, address adapter) external {
+        require(
+            protocolAdapterAddress[name] == address(0),
+            "Adapter already added for this protocol"
+        );
+        protocolAdapterAddress[name] = adapter;
+    }
+
+    // TODO add security check
+    function addMarket(
+        bytes32 protocolName,
+        address marketAddress,
+        address outputToken,
+        address weth,
+        address[] calldata inputTokens,
+        address[] calldata rewardTokens
+    ) external {
+        require(
+            protocolAdapterAddress[protocolName] != address(0),
+            "Add adapter for the protocol before adding market"
+        );
+        require(
+            marketProtocolName[marketAddress] == "",
+            "Market already added for this protocol"
+        );
+        marketProtocolName[marketAddress] = protocolName;
+        Market storage market = markets[marketAddress];
+        market.market = marketAddress;
+        market.outputToken = outputToken;
+        market.weth = weth;
+        market.inputTokens = inputTokens;
+        market.rewardTokens = rewardTokens;
+    }
+
+    function _getAdapterForMarket(address market)
+        internal
+        view
+        returns (IAdapter adapter)
+    {
+        bytes32 name = marketProtocolName[market];
+        require(name != "", "Market not added to any protocol");
+        adapter = IAdapter(protocolAdapterAddress[name]);
+    }
+
+    function _withdraw(
+        IAdapter adapter,
         address from,
-        address to,
-        uint256[] calldata amounts,
+        uint256[] memory amounts,
         bool borrow,
-        bool repay,
-        Swap[] calldata swaps
-    ) external returns (uint256[] memory amountsMoved) {
-        // Find adapter to be used to withdraw tokens
-        bytes32 fromName = marketProtocolName[from];
-        // Check for non zero value
-        address fromAdapterAddress = protocolAdapterAddress[fromName];
-        // Check for zero address
-
-        IAdapter fromAdapter = IAdapter(fromAdapterAddress);
-        uint256[] memory amountsWithdrawn;
+        address pullFrom,
+        address transferTo
+    ) internal returns (uint256[] memory amountsWithdrawn) {
         if (borrow) {
-            amountsWithdrawn = fromAdapter.borrow(msg.sender, amounts, from);
+            amountsWithdrawn = adapter.borrow{value: msg.value}(
+                msg.sender,
+                amounts,
+                from,
+                pullFrom,
+                transferTo
+            );
         } else {
-            amountsWithdrawn = fromAdapter.redeem(msg.sender, amounts, from);
+            amountsWithdrawn = adapter.redeem{value: msg.value}(
+                msg.sender,
+                amounts,
+                from,
+                pullFrom,
+                transferTo
+            );
         }
-
-        // Optmization done by checking if toName and fromName are same
-        // Find adapter to be used to deposit tokens
-        bytes32 toName = marketProtocolName[to];
-        // Check for non zero value
-        address toAdapterAddress = protocolAdapterAddress[toName];
-        // Check for zero address
-        IAdapter toAdapter = IAdapter(toAdapterAddress);
-
-        // Logic to swap tokens if required
-        // Swap[] memory swaps = getSwapAmounts(
-        //     from,
-        //     to,
-        //     toAdapter,
-        //     amountsWithdrawn
-        // );
-        uint256[] memory amountsSwapped = executeSwaps(swaps);
-
-        if (repay) {
-            amountsMoved = toAdapter.repay(msg.sender, amountsSwapped, to);
-        } else {
-            amountsMoved = toAdapter.invest(msg.sender, amountsSwapped, to);
-        }
-
-        // Return remaining from amounts and amountsSwapped
     }
 
-    struct Swap {
-        address from;
-        address to;
-        uint256 fromAmount;
-        uint256 toAmount;
-        bool fromFixed;
-    }
-
-    // Can develop a public verison in which we don't have adapter instances
-    function getSwapAmounts(
-        address from,
+    function _deposit(
+        IAdapter adapter,
         address to,
-        IAdapter toAdapter,
+        uint256[] memory amounts,
+        bool repay,
+        address pullFrom,
+        address transferTo
+    ) internal returns (uint256[] memory amountsDeposited) {
+        if (repay) {
+            amountsDeposited = adapter.repay{value: msg.value}(
+                msg.sender,
+                amounts,
+                to,
+                pullFrom,
+                transferTo
+            );
+        } else {
+            amountsDeposited = adapter.invest{value: msg.value}(
+                msg.sender,
+                amounts,
+                to,
+                pullFrom,
+                transferTo
+            );
+        }
+    }
+
+    // TODO implement it
+    function _swap(
+        address fromToken,
+        address toToken,
+        uint256 amount
+    ) internal returns (uint256 amountBought) {
+        amountBought = amount * getExchangeRate(fromToken, toToken);
+    }
+
+    // TODO implement it
+    function getExchangeRate(address fromToken, address toToken)
+        public
+        view
+        returns (uint256)
+    {
+        return 1000;
+    }
+
+    function _swapFromTokensToTokens(
+        Market memory fromMarket,
+        Market memory toMarket,
         uint256[] memory amounts
-    ) internal returns (Swap[] memory swaps) {
-        uint256 ratioPrecision = 10000;
-        address[] memory fromInputTokens = marketInputTokens[from];
-        address[] memory toInputTokens = marketInputTokens[to];
-        uint256[] memory toRatio = toAdapter.getInputTokenRatio();
+    ) internal returns (uint256[] memory toInputTokenAmounts) {
+        (
+            bool isSwapRequired,
+            bool[] memory sellFromTokens,
+            uint256[] memory foundToTokens
+        ) = _isIntermediateSwapRequired(fromMarket, toMarket);
+        address tokenBought;
+        uint256 amountBought;
+        if (isSwapRequired) {
+            (tokenBought, amountBought) = _swapToIntermediateToken(
+                fromMarket,
+                toMarket,
+                sellFromTokens,
+                foundToTokens,
+                amounts
+            );
+        }
 
-        // Calculate tokens to buy and sell
-        uint256 totalAmount = 0;
-        uint256[] memory availableToAmounts = new uint256[](toInputTokens.length);
-        uint256[] memory sellableFromAmounts = new uint256[](fromInputTokens.length);
-        uint256[] memory fromTokenRates = new uint256[](fromInputTokens.length);
-        for (uint256 i = 0; i < fromInputTokens.length; i++) {
-            fromTokenRates[i] = getExchangeRateToETH(fromInputTokens[i]);
-            uint256 amount = amounts[i] * fromTokenRates[i];
-            totalAmount += amount;
+        toInputTokenAmounts = new uint256[](toMarket.inputTokens.length);
+        for (uint256 j = 0; j < toMarket.inputTokens.length; j++) {
+            if (foundToTokens[j] > 0) {
+                toInputTokenAmounts[j] = amounts[foundToTokens[j] - 1];
+            }
+            if (toMarket.inputTokens[j] == tokenBought) {
+                toInputTokenAmounts[j] = amountBought;
+            }
+        }
+    }
 
+    function _isIntermediateSwapRequired(
+        Market memory fromMarket,
+        Market memory toMarket
+    )
+        internal
+        pure
+        returns (
+            bool result,
+            bool[] memory sellFromTokens,
+            uint256[] memory foundToTokens
+        )
+    {
+        foundToTokens = new uint256[](toMarket.inputTokens.length);
+        sellFromTokens = new bool[](fromMarket.inputTokens.length);
+        for (uint256 i = 0; i < fromMarket.inputTokens.length; i++) {
             bool found = false;
             uint256 foundIndex;
-            for (uint256 j; j < toInputTokens.length; j++) {
-                if (fromInputTokens[i] == toInputTokens[j]) {
+            for (uint256 j = 0; j < toMarket.inputTokens.length; j++) {
+                if (fromMarket.inputTokens[i] == toMarket.inputTokens[j]) {
                     found = true;
                     foundIndex = j;
                     break;
                 }
             }
             if (found) {
-                availableToAmounts[foundIndex] = amount;
+                foundToTokens[foundIndex] = i + 1;
             } else {
-                sellableFromAmounts[i] = amount;
+                result = true;
+                sellFromTokens[i] = true;
             }
         }
-
-        // Assumption - ratio is in terms of value of tokens. It not ratio of count of tokens
-        // For example if we need to deposit 1 ETH and 2000 DAI in a pool then ratio will be
-        // assuming 1 ETH = 2000 DAI
-        // ratio[0] = 50, ratio[1] = 50
-        uint256[] memory buyTokenAmounts = new uint256[](toInputTokens.length);
-        uint256[] memory sellTokenAmounts = new uint256[](toInputTokens.length);
-        uint256[] memory toTokenRates = new uint256[](fromInputTokens.length);
-        for (uint256 i = 0; i < toInputTokens.length; i++) {
-            toTokenRates[i] = getExchangeRateToETH(toInputTokens[i]);
-            uint256 amount = (toRatio[i] / ratioPrecision) * totalAmount;
-            if (amount > availableToAmounts[i]) {
-                buyTokenAmounts[i] = amount - availableToAmounts[i];
-            } else {
-                sellTokenAmounts[i] = availableToAmounts[i] - amount;
-            }
-        }
-
-        // Swap is done in two way to simply calculations
-        // From token to ETH and then ETH to to token
-        address fromWETH = marketWETH[from];
-        address toWETH = marketWETH[to];
-        swaps = new Swap[](fromInputTokens.length + toInputTokens.length);
-        for (uint256 i = 0; i < fromInputTokens.length; i++) {
-            if (sellableFromAmounts[i] > 0) {
-                swaps[i] = Swap(fromInputTokens[i], fromWETH, amounts[i], sellableFromAmounts[i], true);
-            }
-        }
-        for (uint256 i = 0; i < toInputTokens.length; i++) {
-            uint256 swapIndex = fromInputTokens.length + i;
-            if (sellTokenAmounts[i] > 0) {
-                // we can use toTokenRates here
-                uint256 amountToSell = (availableToAmounts[i] - sellTokenAmounts[i])/toTokenRates[i];
-                swaps[swapIndex] = Swap(toInputTokens[i], toWETH, amountToSell, sellTokenAmounts[i], true);
-            } else if (buyTokenAmounts[i] > 0) {
-                uint256 amountToBuy = buyTokenAmounts[i]/toTokenRates[i];
-                swaps[swapIndex] = Swap(toWETH, toInputTokens[i], buyTokenAmounts[i], amountToBuy, false);
-            }
-        }
-
-        // 
     }
 
-    // TODO implement with chainlink oracle price feeds
-    function getExchangeRateToETH(address from) public view returns (uint256) {
-        return 1357;
+    function _swapToIntermediateToken(
+        Market memory fromMarket,
+        Market memory toMarket,
+        bool[] memory sellFromTokens,
+        uint256[] memory foundToTokens,
+        uint256[] memory amounts
+    ) internal returns (address tokenToBuy, uint256 amountBought) {
+        tokenToBuy = toMarket.inputTokens[0];
+        // Buy token which is not already available to reduce number of swaps
+        if (toMarket.inputTokens.length > 1) {
+            for (uint256 j = 1; j < toMarket.inputTokens.length; j++) {
+                if (foundToTokens[j - 1] > 0) {
+                    tokenToBuy = toMarket.inputTokens[j];
+                } else {
+                    break;
+                }
+            }
+        }
+
+        for (uint256 i = 0; i < fromMarket.inputTokens.length; i++) {
+            if (!sellFromTokens[i]) {
+                continue;
+            }
+            amountBought += _swap(
+                fromMarket.inputTokens[i],
+                tokenToBuy,
+                amounts[i]
+            );
+        }
     }
 
-    // TODO implement with shushiswap or quickswap
-    function executeSwaps(Swap[] memory swaps) public returns (uint256[] memory amounts) {
-        amounts = new uint256[](swaps.length);
-        for (uint256 i; i < swaps.length; i++) {
-            amounts[i] = swaps[i].toAmount;
+    // function _swapToCorrectRatio(
+    //     IAdapter adapter,
+    //     Market memory toMarket,
+    //     uint256[] memory amounts
+    // ) internal returns (uint256[] memory toInputTokenAmounts) {
+    //     if (toMarket.inputTokens.length == 1) {
+    //         toInputTokenAmounts[0] = amounts[0];
+    //         return toInputTokenAmounts;
+    //     }
+
+    //     uint256 totalAmount = amounts[0];
+    //     address firstToken = toMarket.inputTokens[0];
+    //     for (uint256 j = 1; j < toMarket.inputTokens.length; j++) {
+    //         totalAmount += amounts[j] * getExchangeRate(firstToken, toMarket.inputTokens[j]);
+    //     }
+
+    //     uint256[] memory ratio = adapter.getInputTokenRatio();
+    //     for (uint256 j = 0; j < toMarket.inputTokens.length; j++) {
+    //         uint256 requiredAmount = ratio[j] * totalAmount / ratioPrecision;
+    //     }
+
+    //     // TODO complete it
+    // }
+
+    function getMarketAdapterAddress(address market)
+        external
+        view
+        returns (address adapterAddress)
+    {
+        bytes32 name = marketProtocolName[market];
+        require(name != "", "Market not added to any protocol");
+        adapterAddress = protocolAdapterAddress[name];
+    }
+
+    function withdraw(
+        address from,
+        uint256[] memory amounts,
+        bool borrow
+    ) external returns (uint256[] memory amountsWithdrawn) {
+        IAdapter adapter = _getAdapterForMarket(from);
+        return
+            _withdraw(adapter, from, amounts, borrow, msg.sender, msg.sender);
+    }
+
+    function deposit(
+        address to,
+        uint256[] memory amounts,
+        bool repay
+    ) external returns (uint256[] memory amountsDeposited) {
+        IAdapter adapter = _getAdapterForMarket(to);
+        return _deposit(adapter, to, amounts, repay, msg.sender, msg.sender);
+    }
+
+    function migrate(
+        address from,
+        address to,
+        uint256[] calldata amounts,
+        bool borrow,
+        bool repay
+    )
+        external
+        payable
+        returns (
+            uint256[] memory amountsWithdrawn,
+            uint256[] memory amountsDeposited
+        )
+    {
+        require(from != msg.sender, "Use deposit function instead of migrate");
+        require(to != msg.sender, "Use withdraw funcion instead of migrate");
+
+        IAdapter fromAdapter = _getAdapterForMarket(from);
+        IAdapter toAdapter = _getAdapterForMarket(to);
+
+        Market memory fromMarket = markets[from];
+        Market memory toMarket = markets[to];
+
+        // Withdraw from first market
+        // fromAdapter is supposed to transfer withdrawan tokens to controller instead of user
+        amountsWithdrawn = _withdraw(
+            fromAdapter,
+            from,
+            amounts,
+            borrow,
+            msg.sender,
+            address(this)
+        );
+
+        // Swap withdrawan tokens to the tokens that needs to be deposited in second market
+        uint256[] memory toInputTokenAmounts = _swapFromTokensToTokens(
+            fromMarket,
+            toMarket,
+            amountsWithdrawn
+        );
+
+        // Swap second market input tokens to correct ratio
+        // uint256[] memory amountsToDeposit = _swapToCorrectRatio(toAdapter, toMarket, toInputTokenAmounts);
+        uint256[] memory amountsToDeposit = toInputTokenAmounts;
+
+        // Transfer second protocol input tokens to toAdapter
+        for (uint256 j = 0; j < toMarket.inputTokens.length; j++) {
+            IERC20 token = IERC20(toMarket.inputTokens[j]);
+            token.safeIncreaseAllowance(
+                address(toAdapter),
+                amountsToDeposit[j]
+            );
+        }
+
+        // Deposit tokens to second protocol
+        amountsDeposited = _deposit(
+            toAdapter,
+            to,
+            amountsToDeposit,
+            repay,
+            address(this),
+            msg.sender
+        );
+
+        // Return difference in amountsDeposited and amountsToDeposit to the user
+        for (uint256 j = 0; j < toMarket.inputTokens.length; j++) {
+            if (amountsDeposited[j] < amountsToDeposit[j]) {
+                IERC20 token = IERC20(toMarket.inputTokens[j]);
+                token.safeTransfer(
+                    msg.sender,
+                    amountsToDeposit[j] - amountsDeposited[j]
+                );
+            }
         }
     }
 }
