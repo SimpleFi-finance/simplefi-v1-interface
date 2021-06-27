@@ -2,85 +2,123 @@
 pragma solidity ^0.8.0;
 
 import "./IAdapter.sol";
+import "./Controller.sol";
 import "./interfaces/CurveInterfaces.sol";
+import "./utils/IERC20.sol";
 import "hardhat/console.sol";
 
-/**
- */
 contract CurveAdapter is IAdapter {
-    // ethIndex is index of ETH amount in amounts array - 255 means no eth
+    address private controllerAddress;
+
+    constructor(address _controllerAddress) {
+        controllerAddress = _controllerAddress;
+    }
+
     function invest(
         address onBehalfOf,
-        address[] calldata tokens,
         uint256[] calldata amounts,
         address to,
-        uint8 ethIndex
+        address pullFrom,
+        address transferTo
     ) external payable override returns (uint256[] memory amountsTransferred) {
-        // address[4] memory stablecoins = ICurveFi_DepositY(to).underlying_coins();
-        uint256[amounts.length] memory arr;
-
-        console.log("Bout to approve");
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).transferFrom(
+        // transfer tokens to this contract
+        address[] memory inputTokens = Controller(controllerAddress)
+        .getInputTokens(to);
+        uint256[3] memory amountsFixedSize;
+        for (uint256 i = 0; i < inputTokens.length; i++) {
+            IERC20(inputTokens[i]).transferFrom(
                 onBehalfOf,
                 address(this),
                 amounts[i]
             );
-            IERC20(tokens[i]).approve(to, amounts[i]);
-            arr[i] = amounts[i];
+            IERC20(inputTokens[i]).approve(to, amounts[i]);
+            amountsFixedSize[i] = amounts[i];
         }
 
-        console.log("Approved everything");
         // deposit stablecoins and get Curve LP tokens
-        // uint256[3] memory amms;
-        // amms[0] = 100000000000000000000;
-        // amms[1] = 100000000;
-        // amms[2] = 100000000;
+        uint256 lpTokensReceived = ICurveDeposit(to).add_liquidity(
+            amountsFixedSize,
+            0,
+            true
+        );
 
-        // address x = ICurveDeposit(to).underlying_coins(0);
-        // console.log(x);
-        ICurveDeposit(to).add_liquidity(arr, 0, true); //0 to mint all Curve has to
+        // stake LP tokens into Gauge to get rewards
+        (, address lpToken, ) = Controller(controllerAddress).markets(to);
+        address curveAaveGauge = transferTo;
+        IERC20(lpToken).approve(curveAaveGauge, lpTokensReceived);
+        ICurveGauge(curveAaveGauge).deposit(lpTokensReceived, onBehalfOf);
 
-        console.log("Stables deposited");
-        // // stake Curve LP tokens into Gauge and get CRV rewards
-        // uint256 curveLPBalance = IERC20(curveFi_LPToken).balanceOf(
-        //     address(this)
-        // );
-
-        // IERC20(curveFi_LPToken).safeApprove(curveFi_LPGauge, curveLPBalance);
-        // ICurveFi_Gauge(curveFi_LPGauge).deposit(curveLPBalance);
-
-        // //Step 3 - get all the rewards (and make whatever you need with them)
-        // crvTokenClaim();
-        // uint256 crvAmount = IERC20(curveFi_CRVToken).balanceOf(address(this));
-        // IERC20(curveFi_CRVToken).safeTransfer(_msgSender(), crvAmount);
+        return amounts;
     }
 
-    // ethIndex is index of ETH amount in amounts array - 255 means no eth
-    // Adapter needs to claim ither reward tokens as well
     function redeem(
         address onBehalfOf,
-        address[] calldata tokens,
         uint256[] calldata amounts,
-        address to,
-        uint8 ethIndex
-    ) external payable override returns (uint256[] memory amountsTransferred) {}
+        address from,
+        address pullFrom,
+        address transferTo
+    ) external payable override returns (uint256[] memory amountsTransferred) {
+        // Unstake LP tokens from Gauge
+        uint256 gaugeBalance = IERC20(pullFrom).balanceOf(onBehalfOf);
+        IERC20(pullFrom).transferFrom(onBehalfOf, address(this), gaugeBalance);
+        ICurveGauge(pullFrom).withdraw(gaugeBalance);
 
-    // ethIndex is index of ETH amount in amounts array - 255 means no eth
+        // convert dynamic size array to fixed size array
+        uint256[3] memory amountsFixedSize;
+        for (uint256 i = 0; i < amounts.length; i++) {
+            amountsFixedSize[i] = amounts[i];
+        }
+
+        // withdraw stablecoins from CurveDeposit
+        (, address lpToken, ) = Controller(controllerAddress).markets(from);
+        uint256 lpBalance = IERC20(lpToken).balanceOf(address(this));
+        IERC20(lpToken).approve(from, lpBalance);
+        ICurveDeposit(from).remove_liquidity_imbalance(
+            amountsFixedSize,
+            lpBalance,
+            true
+        );
+
+        // send tokens to user
+        address[] memory inputTokens = Controller(controllerAddress)
+        .getInputTokens(from);
+        for (uint256 i = 0; i < inputTokens.length; i++) {
+            IERC20(inputTokens[i]).transfer(onBehalfOf, amounts[i]);
+        }
+
+        // send reward tokens to user
+        address[] memory rewardTokens = Controller(controllerAddress)
+        .getInputTokens(from);
+        for (uint256 i = 0; i < rewardTokens.length; i++) {
+            IERC20(rewardTokens[i]).transfer(
+                onBehalfOf,
+                IERC20(rewardTokens[i]).balanceOf(address(this))
+            );
+        }
+
+        return amounts;
+    }
+
     function borrow(
         address onBehalfOf,
-        address[] calldata tokens,
         uint256[] calldata amounts,
-        address to,
-        uint8 ethIndex
-    ) external override returns (uint256[] memory amountsTransferred) {}
+        address from,
+        address pullFrom,
+        address transferTo
+    ) external payable override returns (uint256[] memory amountsTransferred) {}
 
-    // ethIndex is index of ETH amount in amounts array - 255 means no eth
     function repay(
         address onBehalfOf,
-        address[] calldata tokens,
         uint256[] calldata amounts,
         address to,
-        uint8 ethIndex
+        address pullFrom,
+        address transferTo
     ) external payable override returns (uint256[] memory amountsTransferred) {}
+
+    function getInputTokenRatio()
+        external
+        view
+        override
+        returns (uint256[] memory)
+    {}
 }

@@ -62,6 +62,22 @@ contract Controller {
         market.rewardTokens = rewardTokens;
     }
 
+    function getInputTokens(address marketAddress)
+        public
+        view
+        returns (address[] memory)
+    {
+        return markets[marketAddress].inputTokens;
+    }
+
+    function getRewardTokens(address marketAddress)
+        public
+        view
+        returns (address[] memory)
+    {
+        return markets[marketAddress].rewardTokens;
+    }
+
     function _getAdapterForMarket(address market)
         internal
         view
