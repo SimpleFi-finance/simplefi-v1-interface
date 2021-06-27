@@ -15,7 +15,7 @@ interface IAdapter {
     function redeem(
         address onBehalfOf,
         uint256[] calldata amounts,
-        address from,
+        address to,
         address pullFrom,
         address transferTo
     ) external payable returns (uint256[] memory amountsTransferred);
