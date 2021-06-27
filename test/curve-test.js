@@ -39,9 +39,10 @@ describe("CurveAdapter", function () {
     await controller.deployed();
 
     // deploy Curve adapter
-    const IAdapter = await ethers.getContractFactory("CurveAdapter");
-    curveAdapter = await IAdapter.deploy(controller.address);
-    await curveAdapter.deployed();
+    const CurveAdapter = await ethers.getContractFactory("CurveAdapter");
+    tempAdapter = await CurveAdapter.deploy(controller.address);
+    await tempAdapter.deployed();
+    curveAdapter = await ethers.getContractAt("IAdapter", tempAdapter.address, testSigner);
 
     // add adapter and market data
     await controller.addProtocolAdapter(
