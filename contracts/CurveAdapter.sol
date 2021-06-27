@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: GPLV3
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.0;
 
 import "./IAdapter.sol";
 import "./interfaces/CurveInterfaces.sol";
