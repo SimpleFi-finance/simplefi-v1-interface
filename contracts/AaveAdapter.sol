@@ -55,7 +55,7 @@ contract AaveAdapter is IAdapter {
         address to,
         address pullFrom,
         address transferTo
-    ) external payable override returns (uint256[] memory amountsTransferred) {
+    ) external override returns (uint256[] memory amountsTransferred) {
         uint256[] memory amountsRedeemed = new uint256[](1);
         (address market, address tokenToBurn, address wMATIC) = Controller(
             controllerAddress
@@ -106,7 +106,7 @@ contract AaveAdapter is IAdapter {
         address from,
         address pullFrom,
         address transferTo
-    ) external payable override returns (uint256[] memory amountsTransferred) {
+    ) external override returns (uint256[] memory amountsTransferred) {
         (address market, , address wMATIC) = Controller(controllerAddress)
         .markets(from);
         address token = Controller(controllerAddress).getMarketInputTokens(

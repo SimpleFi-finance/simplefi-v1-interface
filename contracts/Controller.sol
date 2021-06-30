@@ -149,7 +149,7 @@ contract Controller is Ownable {
         address transferTo
     ) internal returns (uint256[] memory amountsWithdrawn) {
         if (borrow) {
-            amountsWithdrawn = adapter.borrow{value: msg.value}(
+            amountsWithdrawn = adapter.borrow(
                 msg.sender,
                 amounts,
                 from,
@@ -157,7 +157,7 @@ contract Controller is Ownable {
                 transferTo
             );
         } else {
-            amountsWithdrawn = adapter.redeem{value: msg.value}(
+            amountsWithdrawn = adapter.redeem(
                 msg.sender,
                 amounts,
                 from,
