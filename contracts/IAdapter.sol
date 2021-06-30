@@ -36,5 +36,7 @@ interface IAdapter {
         address transferTo
     ) external payable returns (uint256[] memory amountsTransferred);
 
+    // function ratioCorrectionRequired() external view returns (bool);
+
     function getInputTokenRatio() external view returns (uint256[] memory);
 }

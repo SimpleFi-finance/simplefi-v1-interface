@@ -17,6 +17,32 @@ task("accounts", "Prints the list of accounts", async () => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.5",
+  defaultNetwork: "hardhat",
+  // networks: {
+  //   hardhat: {
+  //     forking: {
+  //       url: `https://polygon-mainnet.infura.io/v3/ff039e57519f46c1880a0436beeacf17`,
+  //       blockNumber: 15937268,
+  //     },
+  //   },
+  // },
+  solidity: {
+    version: "0.8.5",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+    },
+  },
+  paths: {
+    sources: "./contracts",
+    tests: "./test",
+    cache: "./cache",
+    artifacts: "./artifacts",
+  },
+  mocha: {
+    timeout: 600000,
+  },
 };
 
