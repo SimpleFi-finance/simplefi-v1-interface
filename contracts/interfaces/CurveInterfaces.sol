@@ -3,10 +3,28 @@ pragma solidity ^0.8.0;
 
 interface ICurveDeposit {
     function add_liquidity(
+        uint256[2] calldata _amounts,
+        uint256 _min_mint_amount,
+        bool _use_underlying
+    ) external returns (uint256);
+
+    function add_liquidity(
         uint256[3] calldata _amounts,
         uint256 _min_mint_amount,
         bool _use_underlying
     ) external returns (uint256);
+
+    function add_liquidity(
+        uint256[4] calldata _amounts,
+        uint256 _min_mint_amount,
+        bool _use_underlying
+    ) external returns (uint256);
+
+    function remove_liquidity(
+        uint256 _amount,
+        uint256[2] calldata _min_amounts,
+        bool _use_underlying
+    ) external returns (uint256[2] calldata);
 
     function remove_liquidity(
         uint256 _amount,
@@ -14,8 +32,26 @@ interface ICurveDeposit {
         bool _use_underlying
     ) external returns (uint256[3] calldata);
 
+    function remove_liquidity(
+        uint256 _amount,
+        uint256[4] calldata _min_amounts,
+        bool _use_underlying
+    ) external returns (uint256[4] calldata);
+
+    function remove_liquidity_imbalance(
+        uint256[2] calldata _amounts,
+        uint256 _max_burn_amount,
+        bool _use_underlying
+    ) external returns (uint256);
+
     function remove_liquidity_imbalance(
         uint256[3] calldata _amounts,
+        uint256 _max_burn_amount,
+        bool _use_underlying
+    ) external returns (uint256);
+
+    function remove_liquidity_imbalance(
+        uint256[4] calldata _amounts,
         uint256 _max_burn_amount,
         bool _use_underlying
     ) external returns (uint256);

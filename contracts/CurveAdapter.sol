@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./IAdapter.sol";
 import "./Controller.sol";
 import "./interfaces/CurveInterfaces.sol";
-import "./utils/IERC20.sol";
+import "./oz/token/ERC20/IERC20.sol";
 import "hardhat/console.sol";
 
 contract CurveAdapter is IAdapter {
@@ -23,30 +23,60 @@ contract CurveAdapter is IAdapter {
     ) external payable override returns (uint256[] memory amountsTransferred) {
         // transfer tokens to this contract
         address[] memory inputTokens = Controller(controllerAddress)
-        .getInputTokens(to);
-        uint256[3] memory amountsFixedSize;
+        .getMarketInputTokens(to);
         for (uint256 i = 0; i < inputTokens.length; i++) {
             IERC20(inputTokens[i]).transferFrom(
-                onBehalfOf,
+                pullFrom,
                 address(this),
                 amounts[i]
             );
             IERC20(inputTokens[i]).approve(to, amounts[i]);
-            amountsFixedSize[i] = amounts[i];
         }
 
-        // deposit stablecoins and get Curve LP tokens
-        uint256 lpTokensReceived = ICurveDeposit(to).add_liquidity(
-            amountsFixedSize,
-            0,
-            true
-        );
+        uint256 lpTokensReceived = 0;
+        if (amounts.length == 2) {
+            // convert dynamic size array to fixed size array
+            uint256[3] memory amountsFixedSize;
+            for (uint256 i = 0; i < amounts.length; i++) {
+                amountsFixedSize[i] = amounts[i];
+            }
+            // deposit stablecoins and get Curve LP tokens
+            lpTokensReceived = ICurveDeposit(to).add_liquidity(
+                amountsFixedSize,
+                0,
+                true
+            );
+        } else if (amounts.length == 3) {
+            // convert dynamic size array to fixed size array
+            uint256[3] memory amountsFixedSize;
+            for (uint256 i = 0; i < amounts.length; i++) {
+                amountsFixedSize[i] = amounts[i];
+            }
+            // deposit stablecoins and get Curve LP tokens
+            lpTokensReceived = ICurveDeposit(to).add_liquidity(
+                amountsFixedSize,
+                0,
+                true
+            );
+        } else if (amounts.length == 4) {
+            // convert dynamic size array to fixed size array
+            uint256[4] memory amountsFixedSize;
+            for (uint256 i = 0; i < amounts.length; i++) {
+                amountsFixedSize[i] = amounts[i];
+            }
+            // deposit stablecoins and get Curve LP tokens
+            lpTokensReceived = ICurveDeposit(to).add_liquidity(
+                amountsFixedSize,
+                0,
+                true
+            );
+        } else {
+            revert("Only pools of 2, 3 or 4 tokens are supported");
+        }
 
-        // stake LP tokens into Gauge to get rewards
+        // transfer LP tokens to user
         (, address lpToken, ) = Controller(controllerAddress).markets(to);
-        address curveAaveGauge = transferTo;
-        IERC20(lpToken).approve(curveAaveGauge, lpTokensReceived);
-        ICurveGauge(curveAaveGauge).deposit(lpTokensReceived, onBehalfOf);
+        IERC20(lpToken).transfer(transferTo, lpTokensReceived);
 
         return amounts;
     }
@@ -58,43 +88,65 @@ contract CurveAdapter is IAdapter {
         address pullFrom,
         address transferTo
     ) external payable override returns (uint256[] memory amountsTransferred) {
-        // Unstake LP tokens from Gauge
-        uint256 gaugeBalance = IERC20(pullFrom).balanceOf(onBehalfOf);
-        IERC20(pullFrom).transferFrom(onBehalfOf, address(this), gaugeBalance);
-        ICurveGauge(pullFrom).withdraw(gaugeBalance);
-
-        // convert dynamic size array to fixed size array
-        uint256[3] memory amountsFixedSize;
-        for (uint256 i = 0; i < amounts.length; i++) {
-            amountsFixedSize[i] = amounts[i];
-        }
-
-        // withdraw stablecoins from CurveDeposit
+        // transfer LP token to contract
         (, address lpToken, ) = Controller(controllerAddress).markets(from);
-        uint256 lpBalance = IERC20(lpToken).balanceOf(address(this));
+        uint256 lpBalance = IERC20(lpToken).balanceOf(pullFrom);
+        IERC20(lpToken).transferFrom(pullFrom, address(this), lpBalance);
         IERC20(lpToken).approve(from, lpBalance);
-        ICurveDeposit(from).remove_liquidity_imbalance(
-            amountsFixedSize,
-            lpBalance,
-            true
-        );
+
+        uint256 lpTokensBurned = 0;
+        if (amounts.length == 2) {
+            // convert dynamic size array to fixed size array
+            uint256[2] memory amountsFixedSize;
+            for (uint256 i = 0; i < amounts.length; i++) {
+                amountsFixedSize[i] = amounts[i];
+            }
+
+            // withdraw stablecoins from CurveDeposit
+            lpTokensBurned = ICurveDeposit(from).remove_liquidity_imbalance(
+                amountsFixedSize,
+                lpBalance,
+                true
+            );
+        } else if (amounts.length == 3) {
+            // convert dynamic size array to fixed size array
+            uint256[3] memory amountsFixedSize;
+            for (uint256 i = 0; i < amounts.length; i++) {
+                amountsFixedSize[i] = amounts[i];
+            }
+
+            // withdraw stablecoins from CurveDeposit
+            lpTokensBurned = ICurveDeposit(from).remove_liquidity_imbalance(
+                amountsFixedSize,
+                lpBalance,
+                true
+            );
+        } else if (amounts.length == 4) {
+            // convert dynamic size array to fixed size array
+            uint256[4] memory amountsFixedSize;
+            for (uint256 i = 0; i < amounts.length; i++) {
+                amountsFixedSize[i] = amounts[i];
+            }
+
+            // withdraw stablecoins from CurveDeposit
+            lpTokensBurned = ICurveDeposit(from).remove_liquidity_imbalance(
+                amountsFixedSize,
+                lpBalance,
+                true
+            );
+        } else {
+            revert("Only pools of 2, 3 or 4 tokens are supported");
+        }
 
         // send tokens to user
         address[] memory inputTokens = Controller(controllerAddress)
-        .getInputTokens(from);
+        .getMarketInputTokens(from);
         for (uint256 i = 0; i < inputTokens.length; i++) {
-            IERC20(inputTokens[i]).transfer(onBehalfOf, amounts[i]);
+            IERC20(inputTokens[i]).transfer(transferTo, amounts[i]);
         }
 
-        // send reward tokens to user
-        address[] memory rewardTokens = Controller(controllerAddress)
-        .getInputTokens(from);
-        for (uint256 i = 0; i < rewardTokens.length; i++) {
-            IERC20(rewardTokens[i]).transfer(
-                onBehalfOf,
-                IERC20(rewardTokens[i]).balanceOf(address(this))
-            );
-        }
+        // send remaining lp tokens back to user
+        IERC20(lpToken).transfer(transferTo, lpBalance - lpTokensBurned);
 
         return amounts;
     }
@@ -114,11 +166,4 @@ contract CurveAdapter is IAdapter {
         address pullFrom,
         address transferTo
     ) external payable override returns (uint256[] memory amountsTransferred) {}
-
-    function getInputTokenRatio()
-        external
-        view
-        override
-        returns (uint256[] memory)
-    {}
 }
