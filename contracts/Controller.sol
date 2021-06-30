@@ -4,17 +4,16 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "./IAdapter.sol";
-
 import "./oz/access/Ownable.sol";
 import "./oz/token/ERC20/utils/SafeERC20.sol";
 import "./utils/IUniswapV2Router02.sol";
-
 
 contract Controller is Ownable {
     using SafeERC20 for IERC20;
 
     // uint256 constant ratioPrecision = 10000;
-    uint256 private constant deadline = 0xf000000000000000000000000000000000000000000000000000000000000000;
+    uint256 private constant deadline =
+        0xf000000000000000000000000000000000000000000000000000000000000000;
 
     IUniswapV2Router02 private swapRouter;
 
@@ -42,7 +41,10 @@ contract Controller is Ownable {
     }
 
     // TODO add security check
-    function addProtocolAdapter(bytes32 name, address adapter) external onlyOwner {
+    function addProtocolAdapter(bytes32 name, address adapter)
+        external
+        onlyOwner
+    {
         require(
             protocolAdapterAddress[name] == address(0),
             "Adapter already added for this protocol"
@@ -50,7 +52,10 @@ contract Controller is Ownable {
         protocolAdapterAddress[name] = adapter;
     }
 
-    function updateProtocolAdapter(bytes32 name, address adapter) external onlyOwner {
+    function updateProtocolAdapter(bytes32 name, address adapter)
+        external
+        onlyOwner
+    {
         require(
             protocolAdapterAddress[name] != address(0),
             "Adapter for this protocol does not exist"
@@ -97,10 +102,7 @@ contract Controller is Ownable {
             protocolAdapterAddress[protocolName] != address(0),
             "Add adapter for the protocol before adding market"
         );
-        require(
-            marketProtocolName[marketAddress] != "",
-            "Market not added"
-        );
+        require(marketProtocolName[marketAddress] != "", "Market not added");
         marketProtocolName[marketAddress] = protocolName;
         Market storage market = markets[marketAddress];
         market.market = contractAddress;

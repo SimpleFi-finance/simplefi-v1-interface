@@ -1,13 +1,13 @@
 const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 
-let dai, aDai, usdc, awMatic;
+let dai, aDai, usdc;
 let aavePool, aaveAdapter, aaveProvider;
 let testAccount, testSigner;
 
-let wMATIC = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
-let awMATIC = "0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4";
-let LENDING_POOL = "0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf";
+const wMATIC = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
+const awMATIC = "0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4";
+const LENDING_POOL = "0x8dff5e27ea6b7ac08ebfdf9eb090f32ee9a30fcf";
 const DAI = "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063";
 const aDAI = "0x27F8D03b3a2196956ED754baDc28D73be8830A6e";
 const USDC = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174";
@@ -31,7 +31,7 @@ describe("AaveAdapter", function () {
     dai = await ethers.getContractAt("IERC20", DAI, testSigner);
     aDai = await ethers.getContractAt("IERC20", aDAI, testSigner);
     usdc = await ethers.getContractAt("IERC20", USDC, testSigner);
-    awMatic = await ethers.getContractAt("IERC20", testSigner);
+    awMatic = await ethers.getContractAt("IERC20", awMATIC, testSigner);
     aavePool = await ethers.getContractAt("ILendingPool", LENDING_POOL, testSigner);
     aaveProvider = await ethers.getContractAt(
       "IProtocolDataProvider",
@@ -41,7 +41,7 @@ describe("AaveAdapter", function () {
 
     // deploy controller
     const Controller = await ethers.getContractFactory("Controller");
-    controller = await Controller.deploy();
+    controller = await Controller.deploy(DAI);
     await controller.deployed();
 
     // deploy Aave adapter
@@ -51,7 +51,7 @@ describe("AaveAdapter", function () {
     aaveAdapter = await ethers.getContractAt("IAdapter", tempAdapter.address, testSigner);
 
     // register pool data to controller
-    addAaveMarkets();
+    await addAaveMarkets();
 
     // get some funds to test account
     await initBalances(testAccount);
@@ -59,20 +59,17 @@ describe("AaveAdapter", function () {
 
   it("should deposit DAI to Aave pool", async function () {
     expect(await dai.balanceOf(testAccount)).to.equal(toWei("1000"));
+    const daiBalanceBefore = await dai.balanceOf(testAccount);
 
     // deposit 1000 DAI
-    const daiAmountToInvest = toWei("100");
-    await dai.approve(aaveAdapter.address, toWei("1000"));
-    await aaveAdapter.invest(
-      testAccount,
-      [daiAmountToInvest],
-      LENDING_POOL,
-      testAccount,
-      testAccount
-    );
+    const daiAmountToInvest = toWei("1000");
+    await dai.approve(aaveAdapter.address, daiAmountToInvest);
+    await aaveAdapter.invest(testAccount, [daiAmountToInvest], aDAI, testAccount, testAccount);
 
     // check balance and position data
-    expect(await dai.balanceOf(testAccount)).to.equal(toWei("0"));
+    const daiBalanceAfter = await dai.balanceOf(testAccount);
+    expect(daiBalanceBefore.sub(daiBalanceAfter)).to.equal(daiAmountToInvest);
+
     const positionData = await aavePool.getUserAccountData(testAccount);
     assert(positionData.totalCollateralETH > 0);
   });
@@ -84,14 +81,9 @@ describe("AaveAdapter", function () {
     // withdraw 100 DAI
     const daiAmountToWithdraw = toWei("100");
     await aDai.approve(aaveAdapter.address, daiAmountToWithdraw);
-    await aaveAdapter.redeem(
-      testAccount,
-      [daiAmountToWithdraw, "0", "0", "0", "0", "0"],
-      LENDING_POOL,
-      testAccount,
-      testAccount
-    );
+    await aaveAdapter.redeem(testAccount, [daiAmountToWithdraw], aDAI, testAccount, testAccount);
 
+    // check balance and position data
     expect(await dai.balanceOf(testAccount)).to.equal(daiAmountToWithdraw);
     const positionDataAfter = await aavePool.getUserAccountData(testAccount);
     assert(positionDataBefore.totalCollateralETH > positionDataAfter.totalCollateralETH);
@@ -102,7 +94,7 @@ describe("AaveAdapter", function () {
     const positionDataBefore = await aavePool.getUserAccountData(testAccount);
 
     // delegate credit to adapter contract
-    const tokenDetails = await aaveProvider.getReserveTokensAddresses(USDC_CONTRACT);
+    const tokenDetails = await aaveProvider.getReserveTokensAddresses(USDC);
     const variableDebtContract = await ethers.getContractAt(
       "IStableDebtToken",
       tokenDetails.variableDebtTokenAddress,
@@ -112,14 +104,9 @@ describe("AaveAdapter", function () {
     await variableDebtContract.approveDelegation(aaveAdapter.address, usdcAmount);
 
     // borrow 200 USDC
-    await aaveAdapter.borrow(
-      testAccount,
-      ["0", usdcAmount, "0", "0", "0", "0"],
-      LENDING_POOL,
-      testAccount,
-      testAccount
-    );
+    await aaveAdapter.borrow(testAccount, [usdcAmount], aUSDC, testAccount, testAccount);
 
+    // check balance and position data
     expect(await usdc.balanceOf(testAccount)).to.equal(usdcAmount);
     const positionDataAfter = await aavePool.getUserAccountData(testAccount);
     assert(positionDataBefore.availableBorrowsETH > positionDataAfter.availableBorrowsETH);
@@ -132,14 +119,9 @@ describe("AaveAdapter", function () {
     // repay 50 USDC
     const usdcAmountToRepay = ethers.utils.parseUnits("50", 6);
     await usdc.approve(aaveAdapter.address, usdcAmountToRepay);
-    await aaveAdapter.repay(
-      testAccount,
-      ["0", usdcAmountToRepay, "0", "0", "0", "0"],
-      LENDING_POOL,
-      testAccount,
-      testAccount
-    );
+    await aaveAdapter.repay(testAccount, [usdcAmountToRepay], aUSDC, testAccount, testAccount);
 
+    // check balance and position data
     expect(await usdc.balanceOf(testAccount)).to.equal(ethers.utils.parseUnits("150", 6));
     const positionDataAfter = await aavePool.getUserAccountData(testAccount);
     assert(positionDataBefore.healthFactor < positionDataAfter.healthFactor);
@@ -151,15 +133,11 @@ describe("AaveAdapter", function () {
 
     // deposit 100 ETH/Matic
     const maticAmountToDeposit = toWei("100");
-    await aaveAdapter.invest(
-      testAccount,
-      ["0", "0", "0", "0", "0", "0"],
-      LENDING_POOL,
-      testAccount,
-      testAccount,
-      { value: maticAmountToDeposit }
-    );
+    await aaveAdapter.invest(testAccount, [], awMATIC, testAccount, testAccount, {
+      value: maticAmountToDeposit,
+    });
 
+    // check balance and position data
     const maticBalanceAfter = await ethers.provider.getBalance(testAccount);
     assert(maticBalanceBefore > maticBalanceAfter);
 
@@ -177,12 +155,13 @@ describe("AaveAdapter", function () {
     await awMatic.approve(aaveAdapter.address, maticAmountToWithdraw);
     await aaveAdapter.redeem(
       testAccount,
-      ["0", "0", "0", maticAmountToWithdraw, "0", "0"],
-      LENDING_POOL,
+      [maticAmountToWithdraw],
+      awMATIC,
       testAccount,
       testAccount
     );
 
+    // check balance and position data
     const maticBalanceAfter = await ethers.provider.getBalance(testAccount);
     assert(maticBalanceBefore < maticBalanceAfter);
 
@@ -206,14 +185,9 @@ describe("AaveAdapter", function () {
     await variableDebtContract.approveDelegation(aaveAdapter.address, maticAmountToBorrow);
 
     // borrow 20 MATIC
-    await aaveAdapter.borrow(
-      testAccount,
-      ["0", "0", "0", maticAmountToBorrow, "0", "0"],
-      LENDING_POOL,
-      testAccount,
-      testAccount
-    );
+    await aaveAdapter.borrow(testAccount, [maticAmountToBorrow], awMATIC, testAccount, testAccount);
 
+    // check balance and position data
     const maticBalanceAfter = await ethers.provider.getBalance(testAccount);
     assert(maticBalanceBefore < maticBalanceAfter);
 
@@ -228,15 +202,11 @@ describe("AaveAdapter", function () {
 
     // repay 15 ETH/Matic
     const maticAmountToRepay = toWei("15");
-    await aaveAdapter.repay(
-      testAccount,
-      ["0", "0", "0", maticAmountToRepay, "0", "0"],
-      LENDING_POOL,
-      testAccount,
-      testAccount,
-      { value: maticAmountToRepay }
-    );
+    await aaveAdapter.repay(testAccount, [maticAmountToRepay], awMATIC, testAccount, testAccount, {
+      value: maticAmountToRepay,
+    });
 
+    // check balance and position data
     const maticBalanceAfter = await ethers.provider.getBalance(testAccount);
     assert(maticBalanceBefore > maticBalanceAfter);
 
@@ -277,6 +247,7 @@ async function addAaveMarkets() {
   );
   await controller.addMarket(
     ethers.utils.formatBytes32String("Aave Polygon DAI"),
+    aDAI,
     LENDING_POOL,
     aDAI,
     wMATIC,
@@ -291,6 +262,7 @@ async function addAaveMarkets() {
   );
   await controller.addMarket(
     ethers.utils.formatBytes32String("Aave Polygon USDC"),
+    aUSDC,
     LENDING_POOL,
     aUSDC,
     wMATIC,
@@ -305,6 +277,7 @@ async function addAaveMarkets() {
   );
   await controller.addMarket(
     ethers.utils.formatBytes32String("Aave Polygon USDT"),
+    aUSDT,
     LENDING_POOL,
     aUSDT,
     wMATIC,
@@ -319,6 +292,7 @@ async function addAaveMarkets() {
   );
   await controller.addMarket(
     ethers.utils.formatBytes32String("Aave Polygon wETH"),
+    awETH,
     LENDING_POOL,
     awETH,
     wMATIC,
@@ -328,11 +302,12 @@ async function addAaveMarkets() {
 
   // wBTC
   await controller.addProtocolAdapter(
-    ethers.utils.formatBytes32String("Aave Polygon DAI"),
+    ethers.utils.formatBytes32String("Aave Polygon wBTC"),
     aaveAdapter.address
   );
   await controller.addMarket(
-    ethers.utils.formatBytes32String("Aave Polygon DAI"),
+    ethers.utils.formatBytes32String("Aave Polygon wBTC"),
+    awBTC,
     LENDING_POOL,
     awBTC,
     wMATIC,
@@ -347,10 +322,26 @@ async function addAaveMarkets() {
   );
   await controller.addMarket(
     ethers.utils.formatBytes32String("Aave Polygon AAVE"),
+    aAAVE,
     LENDING_POOL,
     aAAVE,
     wMATIC,
     [AAVE],
+    [wMATIC]
+  );
+
+  // wMatic
+  await controller.addProtocolAdapter(
+    ethers.utils.formatBytes32String("Aave Polygon wMatic"),
+    aaveAdapter.address
+  );
+  await controller.addMarket(
+    ethers.utils.formatBytes32String("Aave Polygon wMatic"),
+    awMATIC,
+    LENDING_POOL,
+    awMATIC,
+    wMATIC,
+    [wMATIC],
     [wMATIC]
   );
 }
