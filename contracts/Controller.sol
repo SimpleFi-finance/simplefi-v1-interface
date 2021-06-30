@@ -8,6 +8,7 @@ import "./IAdapter.sol";
 import "./oz/access/Ownable.sol";
 import "./oz/token/ERC20/utils/SafeERC20.sol";
 import "./utils/IUniswapV2Router02.sol";
+import "./utils/IWETH.sol";
 
 
 contract Controller is Ownable {
@@ -15,8 +16,10 @@ contract Controller is Ownable {
 
     // uint256 constant ratioPrecision = 10000;
     uint256 private constant deadline = 0xf000000000000000000000000000000000000000000000000000000000000000;
+    address private constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     IUniswapV2Router02 private swapRouter;
+    IWETH private swapWETH;
 
     // Mapping of market address to protocol name
     mapping(address => bytes32) public marketProtocolName;
@@ -37,8 +40,9 @@ contract Controller is Ownable {
     // Actuall contract address to which the adapter needs to interact can be found in Marlet.market
     mapping(address => Market) public markets;
 
-    constructor(address _swapRouter) {
+    constructor(address _swapRouter, address _weth) {
         swapRouter = IUniswapV2Router02(_swapRouter);
+        swapWETH = IWETH(_weth);
     }
 
     // TODO add security check
@@ -138,6 +142,17 @@ contract Controller is Ownable {
         adapter = IAdapter(protocolAdapterAddress[name]);
     }
 
+    // For UI
+    function getAdapterAddressForMarket(address market)
+        external
+        view
+        returns (address adapterAddress)
+    {
+        bytes32 name = marketProtocolName[market];
+        require(name != "", "Market not added to any protocol");
+        adapterAddress = protocolAdapterAddress[name];
+    }
+
     function _withdraw(
         IAdapter adapter,
         address from,
@@ -192,6 +207,7 @@ contract Controller is Ownable {
         }
     }
 
+    // TODO handle WETH to WETH swap for which a pair may not exist
     function _swap(
         address fromToken,
         address toToken,
@@ -200,6 +216,10 @@ contract Controller is Ownable {
         address[] memory path = new address[](2);
         path[0] = fromToken;
         path[1] = toToken;
+
+        // Approve swapRouter to pull fromToken;
+        IERC20(fromToken).safeIncreaseAllowance(address(swapRouter), sellAmount);
+
         uint256[] memory amountsOut = swapRouter.swapExactTokensForTokens(
             sellAmount,
             1,
@@ -218,39 +238,6 @@ contract Controller is Ownable {
     // {
     //     return 1000;
     // }
-
-    function _swapTokens(
-        address[] memory fromInputTokens,
-        address[] memory toInputTokens,
-        uint256[] memory amounts
-    ) internal returns (uint256[] memory toInputTokenAmounts) {
-        (
-            bool isSwapRequired,
-            bool[] memory sellFromTokens,
-            uint256[] memory foundToTokens
-        ) = _isIntermediateSwapRequired(fromInputTokens, toInputTokens);
-        address tokenBought;
-        uint256 amountBought;
-        if (isSwapRequired) {
-            (tokenBought, amountBought) = _swapToIntermediateToken(
-                fromInputTokens,
-                toInputTokens,
-                sellFromTokens,
-                foundToTokens,
-                amounts
-            );
-        }
-
-        toInputTokenAmounts = new uint256[](toInputTokens.length);
-        for (uint256 j = 0; j < toInputTokens.length; j++) {
-            if (foundToTokens[j] > 0) {
-                toInputTokenAmounts[j] = amounts[foundToTokens[j] - 1];
-            }
-            if (toInputTokens[j] == tokenBought) {
-                toInputTokenAmounts[j] = amountBought;
-            }
-        }
-    }
 
     function _isIntermediateSwapRequired(
         address[] memory fromInputTokens,
@@ -309,6 +296,39 @@ contract Controller is Ownable {
                 continue;
             }
             amountBought += _swap(fromInputTokens[i], tokenToBuy, amounts[i]);
+        }
+    }
+
+    function _swapTokens(
+        address[] memory fromInputTokens,
+        address[] memory toInputTokens,
+        uint256[] memory amounts
+    ) internal returns (uint256[] memory toInputTokenAmounts) {
+        (
+            bool isSwapRequired,
+            bool[] memory sellFromTokens,
+            uint256[] memory foundToTokens
+        ) = _isIntermediateSwapRequired(fromInputTokens, toInputTokens);
+        address tokenBought;
+        uint256 amountBought;
+        if (isSwapRequired) {
+            (tokenBought, amountBought) = _swapToIntermediateToken(
+                fromInputTokens,
+                toInputTokens,
+                sellFromTokens,
+                foundToTokens,
+                amounts
+            );
+        }
+
+        toInputTokenAmounts = new uint256[](toInputTokens.length);
+        for (uint256 j = 0; j < toInputTokens.length; j++) {
+            if (foundToTokens[j] > 0) {
+                toInputTokenAmounts[j] = amounts[foundToTokens[j] - 1];
+            }
+            if (toInputTokens[j] == tokenBought) {
+                toInputTokenAmounts[j] = amountBought;
+            }
         }
     }
 
@@ -382,24 +402,13 @@ contract Controller is Ownable {
     //     }
     // }
 
-    function getMarketAdapterAddress(address market)
-        external
-        view
-        returns (address adapterAddress)
-    {
-        bytes32 name = marketProtocolName[market];
-        require(name != "", "Market not added to any protocol");
-        adapterAddress = protocolAdapterAddress[name];
-    }
-
     function withdraw(
         address from,
         uint256[] memory amounts,
         bool borrow
     ) external returns (uint256[] memory amountsWithdrawn) {
         IAdapter adapter = _getAdapterForMarket(from);
-        return
-            _withdraw(adapter, from, amounts, borrow, msg.sender, msg.sender);
+        return _withdraw(adapter, from, amounts, borrow, msg.sender, msg.sender);
     }
 
     function deposit(
@@ -411,6 +420,32 @@ contract Controller is Ownable {
         return _deposit(adapter, to, amounts, repay, msg.sender, msg.sender);
     }
 
+    function depositOtherTokens(
+        address to,
+        address[] memory tokens,
+        uint256[] memory amounts,
+        bool repay
+    ) external payable returns (uint256[] memory amountsDeposited) {
+        // Check for ETH
+        for (uint256 i; i < tokens.length; i++) {
+            if (tokens[i] == ETH || tokens[i] == address(0)) {
+                swapWETH.deposit{value: amounts[i]}();
+                tokens[i] = address(swapWETH);
+            }
+        }
+
+        // Swap tokens as required
+        Market memory toMarket = markets[to];
+        uint256[] memory toInputTokenAmounts = _swapTokens(
+            tokens,
+            toMarket.inputTokens,
+            amounts
+        );
+
+        IAdapter adapter = _getAdapterForMarket(to);
+        return _deposit(adapter, to, toInputTokenAmounts, repay, msg.sender, msg.sender);
+    }
+
     function migrate(
         address from,
         address to,
@@ -419,7 +454,6 @@ contract Controller is Ownable {
         bool repay
     )
         external
-        payable
         returns (
             uint256[] memory amountsWithdrawn,
             uint256[] memory amountsDeposited
