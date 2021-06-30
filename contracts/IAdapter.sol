@@ -1,4 +1,5 @@
 //SPDX-License-Identifier: GPLV3
+
 pragma solidity ^0.8.0;
 
 // TODO data argument to specify any protocol specific parameters
@@ -38,5 +39,5 @@ interface IAdapter {
 
     // function ratioCorrectionRequired() external view returns (bool);
 
-    function getInputTokenRatio() external view returns (uint256[] memory);
+    // function getInputTokenRatio() external view returns (uint256[] memory);
 }

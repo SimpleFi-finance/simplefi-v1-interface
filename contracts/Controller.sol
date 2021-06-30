@@ -1,14 +1,19 @@
 //SPDX-License-Identifier: GPLV3
+
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "./IAdapter.sol";
 import "./utils/SafeERC20.sol";
+import "./utils/IUniswapV2Router02.sol";
 
 contract Controller {
     using SafeERC20 for IERC20;
 
-    uint256 constant ratioPrecision = 10000;
+    // uint256 constant ratioPrecision = 10000;
+    uint256 private constant deadline = 0xf000000000000000000000000000000000000000000000000000000000000000;
+
+    IUniswapV2Router02 private quickSwapRouter;
 
     // Mapping of market address to protocol name
     mapping(address => bytes32) public marketProtocolName;
@@ -25,7 +30,13 @@ contract Controller {
         address[] rewardTokens;
     }
 
+    // Mapping of logical market address to Market struct
+    // Actuall contract address to which the adapter needs to interact can be found in Marlet.market
     mapping(address => Market) public markets;
+
+    constructor(address _quickSwapRouter) {
+        quickSwapRouter = IUniswapV2Router02(_quickSwapRouter);
+    }
 
     // TODO add security check
     function addProtocolAdapter(bytes32 name, address adapter) external {
@@ -60,6 +71,24 @@ contract Controller {
         market.weth = weth;
         market.inputTokens = inputTokens;
         market.rewardTokens = rewardTokens;
+    }
+
+    function getMarketInputTokens(address _market)
+        external
+        view
+        returns (address[] memory)
+    {
+        Market storage market = markets[_market];
+        return market.inputTokens;
+    }
+
+    function getMarketRewardTokens(address _market)
+        external
+        view
+        returns (address[] memory)
+    {
+        Market storage market = markets[_market];
+        return market.rewardTokens;
     }
 
     function _getAdapterForMarket(address market)
@@ -126,23 +155,32 @@ contract Controller {
         }
     }
 
-    // TODO implement it
     function _swap(
         address fromToken,
         address toToken,
-        uint256 amount
-    ) internal returns (uint256 amountBought) {
-        amountBought = amount * getExchangeRate(fromToken, toToken);
+        uint256 sellAmount
+    ) internal returns (uint256) {
+        address[] memory path = new address[](2);
+        path[0] = fromToken;
+        path[1] = toToken;
+        uint256[] memory amountsOut = quickSwapRouter.swapExactTokensForTokens(
+            sellAmount,
+            1,
+            path,
+            address(this),
+            deadline
+        );
+        return amountsOut[1];
     }
 
     // TODO implement it
-    function getExchangeRate(address fromToken, address toToken)
-        public
-        view
-        returns (uint256)
-    {
-        return 1000;
-    }
+    // function getExchangeRate(address fromToken, address toToken)
+    //     public
+    //     view
+    //     returns (uint256)
+    // {
+    //     return 1000;
+    // }
 
     function _swapTokens(
         address[] memory fromInputTokens,
@@ -233,11 +271,7 @@ contract Controller {
             if (!sellFromTokens[i]) {
                 continue;
             }
-            amountBought += _swap(
-                fromInputTokens[i],
-                tokenToBuy,
-                amounts[i]
-            );
+            amountBought += _swap(fromInputTokens[i], tokenToBuy, amounts[i]);
         }
     }
 

@@ -15,7 +15,8 @@ async function main() {
 
   // We get the contract to deploy
   const Controller = await hre.ethers.getContractFactory("Controller");
-  const controller = await Controller.deploy();
+  const quickswapRuter = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff";
+  const controller = await Controller.deploy(quickswapRuter);
 
   await controller.deployed();
 
