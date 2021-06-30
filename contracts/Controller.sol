@@ -4,16 +4,19 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "./IAdapter.sol";
-import "./utils/SafeERC20.sol";
+
+import "./oz/access/Ownable.sol";
+import "./oz/token/ERC20/utils/SafeERC20.sol";
 import "./utils/IUniswapV2Router02.sol";
 
-contract Controller {
+
+contract Controller is Ownable {
     using SafeERC20 for IERC20;
 
     // uint256 constant ratioPrecision = 10000;
     uint256 private constant deadline = 0xf000000000000000000000000000000000000000000000000000000000000000;
 
-    IUniswapV2Router02 private quickSwapRouter;
+    IUniswapV2Router02 private swapRouter;
 
     // Mapping of market address to protocol name
     mapping(address => bytes32) public marketProtocolName;
@@ -34,12 +37,12 @@ contract Controller {
     // Actuall contract address to which the adapter needs to interact can be found in Marlet.market
     mapping(address => Market) public markets;
 
-    constructor(address _quickSwapRouter) {
-        quickSwapRouter = IUniswapV2Router02(_quickSwapRouter);
+    constructor(address _swapRouter) {
+        swapRouter = IUniswapV2Router02(_swapRouter);
     }
 
     // TODO add security check
-    function addProtocolAdapter(bytes32 name, address adapter) external {
+    function addProtocolAdapter(bytes32 name, address adapter) external onlyOwner {
         require(
             protocolAdapterAddress[name] == address(0),
             "Adapter already added for this protocol"
@@ -47,26 +50,60 @@ contract Controller {
         protocolAdapterAddress[name] = adapter;
     }
 
-    // TODO add security check
+    function updateProtocolAdapter(bytes32 name, address adapter) external onlyOwner {
+        require(
+            protocolAdapterAddress[name] != address(0),
+            "Adapter for this protocol does not exist"
+        );
+        protocolAdapterAddress[name] = adapter;
+    }
+
     function addMarket(
         bytes32 protocolName,
         address marketAddress,
+        address contractAddress,
         address outputToken,
         address weth,
         address[] calldata inputTokens,
         address[] calldata rewardTokens
-    ) external {
+    ) external onlyOwner {
         require(
             protocolAdapterAddress[protocolName] != address(0),
             "Add adapter for the protocol before adding market"
         );
         require(
             marketProtocolName[marketAddress] == "",
-            "Market already added for this protocol"
+            "Market already added"
         );
         marketProtocolName[marketAddress] = protocolName;
         Market storage market = markets[marketAddress];
-        market.market = marketAddress;
+        market.market = contractAddress;
+        market.outputToken = outputToken;
+        market.weth = weth;
+        market.inputTokens = inputTokens;
+        market.rewardTokens = rewardTokens;
+    }
+
+    function updateMarket(
+        bytes32 protocolName,
+        address marketAddress,
+        address contractAddress,
+        address outputToken,
+        address weth,
+        address[] calldata inputTokens,
+        address[] calldata rewardTokens
+    ) external onlyOwner {
+        require(
+            protocolAdapterAddress[protocolName] != address(0),
+            "Add adapter for the protocol before adding market"
+        );
+        require(
+            marketProtocolName[marketAddress] != "",
+            "Market not added"
+        );
+        marketProtocolName[marketAddress] = protocolName;
+        Market storage market = markets[marketAddress];
+        market.market = contractAddress;
         market.outputToken = outputToken;
         market.weth = weth;
         market.inputTokens = inputTokens;
@@ -163,7 +200,7 @@ contract Controller {
         address[] memory path = new address[](2);
         path[0] = fromToken;
         path[1] = toToken;
-        uint256[] memory amountsOut = quickSwapRouter.swapExactTokensForTokens(
+        uint256[] memory amountsOut = swapRouter.swapExactTokensForTokens(
             sellAmount,
             1,
             path,

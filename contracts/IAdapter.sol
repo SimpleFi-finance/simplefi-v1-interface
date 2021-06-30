@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-// TODO data argument to specify any protocol specific parameters
 
+// TODO data argument to specify any protocol specific parameters
 interface IAdapter {
     function invest(
         address onBehalfOf,
