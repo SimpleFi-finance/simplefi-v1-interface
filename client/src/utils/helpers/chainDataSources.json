@@ -1,0 +1,195 @@
+{
+  "tokens": [
+    {
+      "id": "a",
+      "address": "a",
+      "name": "Curve",
+      "logo": "CRV-logo.png",
+      "decimals": 18,
+      "symbol": "CRV",
+      "abi": ""
+    },
+    {
+      "id": "n",
+      "address": "n",
+      "name": "Matic",
+      "logo": "logo-polygon.png",
+      "decimals": 18,
+      "symbol": "MATIC",
+      "abi": ""
+    },
+    {
+      "id": "b",
+      "address": "b",
+      "name": "WBTC",
+      "logo": "WBTC-logo.png",
+      "decimals": 18,
+      "symbol": "WBTC",
+      "abi": ""
+    },
+    {
+      "id": "c",
+      "address": "c",
+      "name": "USDT",
+      "logo": "USDT-logo.png",
+      "decimals": 18,
+      "symbol": "USDT",
+      "abi": ""
+    },
+    {
+      "id": "d",
+      "address": "d",
+      "name": "USDC",
+      "logo": "USDC-logo.png",
+      "decimals": 18,
+      "symbol": "USDC",
+      "abi": ""
+    },
+    {
+      "id": "e",
+      "address": "e",
+      "name": "DAI",
+      "logo": "DAI-logo.png",
+      "decimals": 18,
+      "symbol": "DAI",
+      "abi": ""
+    }
+  ],
+  "protocols": [
+    {
+      "address": "a",
+      "name": "Curve",
+      "logo": "CRV-logo.png",
+      "decimals": 18,
+      "symbol": "CRV",
+      "investments": ["am3crv", "am3crv-gauge"]
+    },
+    {
+      "address": "b",
+      "name": "Aave",
+      "logo": "AAVE-logo.png",
+      "decimals": 18,
+      "symbol": "AAVE",
+      "abi": "",
+      "investments": ["aave-usd"]
+    },
+    {
+      "address": "c",
+      "name": "StakeDAO",
+      "logo": "STAKEDAO-logo.png",
+      "decimals": 18,
+      "symbol": "StakeDAO",
+      "abi": "",
+      "investments": ["stakeDAO-curve.fi-dai-usdc-usdt"]
+    },
+    {
+      "address": "d",
+      "name": "SushiSwap",
+      "logo": "SUSHI-logo.png",
+      "decimals": 18,
+      "symbol": "SUSHI",
+      "abi": "",
+      "investments": ["aave-usd"]
+    },
+    {
+      "address": "e",
+      "name": "QuickSwap",
+      "logo": "quickswap-logo.png",
+      "decimals": 18,
+      "symbol": "QUICK",
+      "abi": "",
+      "investments": ["aave-usd"]
+    }
+  ],
+  "investments": [
+    {
+      "id": "am3crv",
+      "address": "0x445FE580eF8d70FF569aB36e80c647af338db351",
+      "outputToken": "",
+      "inputTokens": [],
+      "tokenAddress": "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171",
+      "name": "Curve.fi amDAI/amUSDC/amUSDT",
+      "description": "Aave DAI pool LP",
+      "symbol": "am3CRV",
+      "decimals": 18,
+      "abi": "",
+      "type": "LP"
+    },
+    {
+      "id": "am3crv-gauge",
+      "address": "0x19793b454d3afc7b454f206ffe95ade26ca6912c",
+      "outputToken": "",
+      "inputTokens": [],
+      "decimals": 18,
+      "name": "am3CRV-gauge",
+      "description": "Curve farm for the Aave DAI pool LP",
+      "symbol": "am3CRV-gauge",
+      "abi": "",
+      "type": "farm"
+    },
+    {
+      "id": "aave-usdt",
+      "address": "",
+      "outputToken": "",
+      "inputTokens": [],
+      "name": "amUSDT",
+      "decimals": 18,
+      "tokenAddress": "",
+      "description": "USDT deposit in Aave",
+      "symbol": "amUSD",
+      "abi": "",
+      "type": "LP"
+    },
+    {
+      "id": "aave-usdc",
+      "address": "",
+      "outputToken": "",
+      "inputTokens": [],
+      "name": "amUSDC",
+      "decimals": 18,
+      "tokenAddress": "",
+      "description": "USDC deposit in Aave",
+      "symbol": "amUSD",
+      "abi": "",
+      "type": "LP"
+    },
+    {
+      "id": "stakeDAO-curve.fi-dai-usdc-usdt",
+      "address": "",
+      "outputToken": "",
+      "inputTokens": [],
+      "tokenAddress": "",
+      "decimals": 18,
+      "name": "StakeDAO Curve.fi amDAI/amUSDC/amUSDT",
+      "description": "Passive Aave USD Strategy (Polygon)",
+      "logo": "",
+      "symbol": "",
+      "abi": "",
+      "type": "Farm"
+    },
+    {
+      "id": "a",
+      "address": "a",
+      "outputToken": "",
+      "inputTokens": [],
+      "name": "SushiSwap",
+      "decimals": 18,
+      "description": "",
+      "symbol": "",
+      "abi": "",
+      "type": ""
+    },
+    {
+      "id": "v",
+      "address": "b",
+      "name": "QuickSwap",
+      "outputToken": "",
+      "inputTokens": [],
+      "decimals": 18,
+      "description": "",
+      "symbol": "",
+      "abi": "",
+      "type": ""
+    }
+  ]
+}
