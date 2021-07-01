@@ -190,7 +190,7 @@ contract Controller is Ownable {
         address transferTo
     ) internal returns (uint256[] memory amountsDeposited) {
         if (repay) {
-            amountsDeposited = adapter.repay{value: msg.value}(
+            amountsDeposited = adapter.repay(
                 msg.sender,
                 amounts,
                 to,
@@ -198,7 +198,7 @@ contract Controller is Ownable {
                 transferTo
             );
         } else {
-            amountsDeposited = adapter.invest{value: msg.value}(
+            amountsDeposited = adapter.invest(
                 msg.sender,
                 amounts,
                 to,
@@ -426,25 +426,61 @@ contract Controller is Ownable {
         address[] memory tokens,
         uint256[] memory amounts,
         bool repay
-    ) external payable returns (uint256[] memory amountsDeposited) {
-        // Check for ETH
-        for (uint256 i; i < tokens.length; i++) {
-            if (tokens[i] == ETH || tokens[i] == address(0)) {
-                swapWETH.deposit{value: amounts[i]}();
-                tokens[i] = address(swapWETH);
-            }
-        }
-
-        // Swap tokens as required
+    ) external returns (uint256[] memory amountsDeposited) {
         Market memory toMarket = markets[to];
+        IAdapter adapter = _getAdapterForMarket(to);
+    
+        // Swap tokens as required
         uint256[] memory toInputTokenAmounts = _swapTokens(
             tokens,
             toMarket.inputTokens,
             amounts
         );
 
+        for (uint256 j = 0; j < toMarket.inputTokens.length; j++) {
+            IERC20 token = IERC20(toMarket.inputTokens[j]);
+            token.safeIncreaseAllowance(
+                address(adapter),
+                toInputTokenAmounts[j]
+            );
+        }
+
+        return _deposit(adapter, to, toInputTokenAmounts, repay, address(this), msg.sender);
+    }
+
+    function depositETH(
+        address to,
+        bool repay
+    ) external payable returns (uint256[] memory amountsDeposited) {
+        Market memory toMarket = markets[to];
         IAdapter adapter = _getAdapterForMarket(to);
-        return _deposit(adapter, to, toInputTokenAmounts, repay, msg.sender, msg.sender);
+        
+        address[] memory tokens = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+
+        tokens[0] = toMarket.weth;
+        amounts[0] = msg.value;
+
+        IWETH marketWETH = IWETH(toMarket.weth);
+        marketWETH.deposit{value: msg.value}();
+        marketWETH.approve(address(adapter), msg.value);
+
+        // Swap tokens as required
+        uint256[] memory toInputTokenAmounts = _swapTokens(
+            tokens,
+            toMarket.inputTokens,
+            amounts
+        );
+
+        for (uint256 j = 0; j < toMarket.inputTokens.length; j++) {
+            IERC20 token = IERC20(toMarket.inputTokens[j]);
+            token.safeIncreaseAllowance(
+                address(adapter),
+                toInputTokenAmounts[j]
+            );
+        }
+
+        return _deposit(adapter, to, toInputTokenAmounts, repay, address(this), msg.sender);
     }
 
     function migrate(

@@ -25,8 +25,8 @@ contract AaveAdapter is IAdapter {
         .markets(to);
 
         if (msg.value != 0) {
-            IWETH(wMATIC).approve(market, msg.value);
             IWETH(wMATIC).deposit{value: msg.value}();
+            IWETH(wMATIC).approve(market, msg.value);
             ILendingPool(market).deposit(
                 address(wMATIC),
                 msg.value,
@@ -143,8 +143,8 @@ contract AaveAdapter is IAdapter {
         .markets(to);
 
         if (msg.value != 0) {
-            IWETH(wMATIC).approve(market, msg.value);
             IWETH(wMATIC).deposit{value: msg.value}();
+            IWETH(wMATIC).approve(market, msg.value);
             ILendingPool(market).repay(
                 address(wMATIC),
                 msg.value,
