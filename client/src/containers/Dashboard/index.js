@@ -30,8 +30,8 @@ const initState = {
 const Dashboard = ({ history, address, provider, userSigner }) => {
   const [modal, setModal] = useState({state: false, direction: null});
   const [swapSelection, setSwapSelection] = useState(initState);
-  // const [tokens, setTokens] = useState([]);
-  // const [investments, setInvestments] = useState([]);
+  const [tokens, setTokens] = useState([]);
+  const [investments, setInvestments] = useState([]);
 
   useEffect(() => {
     if (address) {
@@ -40,21 +40,18 @@ const Dashboard = ({ history, address, provider, userSigner }) => {
         const balances = []
         for (let asset of data) {
           // TODO query user balances
-          balances.push({
-            name: asset.name,
-            symbol: asset.symbol,
-            logo: asset.logo,
-            amount: 10
-          })
+          // attach contract and query balance => convert to number with right decimals
+          asset['balance'] = 12
         }
         return balances;
       };
-
-      const tokens = getBalances(investmentsData.tokens)
-      const investments = getBalances(investmentsData.investments)
-
-      // setTokens(tokens)
-      // setInvestments(investments)
+      const tokens = [...investmentsData.tokens];
+      const investments = [...investmentsData.investments];
+      getBalances(tokens)
+      getBalances(investments)
+      console.log(tokens)
+      setTokens(tokens)
+      setInvestments(investments)
     } else {
       history.push('/');
     }
@@ -99,7 +96,11 @@ const Dashboard = ({ history, address, provider, userSigner }) => {
           closeModal={() => setModal({ state: false, direction: null })}
         content={
           <SelectionModal
-            investmentsData={investmentsData}
+            investmentsData={{
+              tokens: tokens,
+              investments: investments,
+              protocols: [...investmentsData.protocols]
+            }}
             setSwapAsset={(asset) => setSwapAsset(asset, modal.direction)}
           />}
         />
@@ -119,19 +120,22 @@ const Dashboard = ({ history, address, provider, userSigner }) => {
           swapAmount={swapSelection.to.value}
           setSwapAmount={(value) => setSwapValue(value, 'to')}
         />
-        <div style={{ height: '60px', width: '250px', margin: '4px auto', fontSize:'24px' }}>
+        <div style={{ height: '70px', width: 'calc(100% - 20px)', margin: '10px 10px 5px', fontSize:'24px' }}>
           {address
             ?
             <Button
               clickAction={() => { console.log('fire contract') }}
               disable={buttonDisabled}
             >
-              Tesser
+              {buttonDisabled ?
+                "Enter an Amount"
+                : "Tesser"
+              }
             </Button>
             :
             <Button
               type='error'
-              clickAction={() => { }}
+              clickAction={() => { console.log('connect wallet')}}
             >
               Connect Wallet
             </Button>

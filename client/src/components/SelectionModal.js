@@ -110,7 +110,7 @@ const SelectionModal = ({investmentsData, setSwapAsset}) => {
             onClick={() => setEntity('tokens')}>
             Token
           </SelectorSt>
-            <h3> |</h3>
+            <h3> | </h3>
           <SelectorSt
             isActive={entity === 'investments'}
             onClick={() => setEntity('investments')}>
@@ -126,20 +126,22 @@ const SelectionModal = ({investmentsData, setSwapAsset}) => {
           list={[]}
           placeholder={title}
         />
-        <>
-          <h4>{subTitle}</h4>
-          <div>
-            {investmentsData.protocols.map((protocol, index) => (
-              <FilterProtocol
-                key={protocol.address}
-                filterAction={(address) => setProtocolFilter(address)}
-                filterValue={filter.protocol}
-                protocol={protocol}
-                disabled={false}
-              />
-            ))}
-          </div>
-        </>
+        {entity !== 'tokens' &&
+          <>
+            <h4>{subTitle}</h4>
+            <div>
+              {investmentsData.protocols.map((protocol, index) => (
+                <FilterProtocol
+                  key={protocol.address}
+                  filterAction={(address) => setProtocolFilter(address)}
+                  filterValue={filter.protocol}
+                  protocol={protocol}
+                  disabled={false}
+                />
+              ))}
+            </div>
+          </>
+        }
       </ModalTitleSectionSt>
       <ModalContentSt>
         {entity !== 'tokens' && protocols.map(protocol => {

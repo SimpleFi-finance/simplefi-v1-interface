@@ -21,6 +21,7 @@ const AssetSelectorSt = styled.div`
       height: 25px;
       width: 25px;
       object-fit: contain;
+      transform: unset;
     }
     svg {
       height: 16px;
@@ -31,7 +32,7 @@ const AssetSelectorSt = styled.div`
       color: inherit;
       fill: currentColor;
     }
-    p{
+    p {
       color:  black;
       margin: auto 5px;
     }
