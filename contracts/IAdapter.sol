@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-
 // TODO data argument to specify any protocol specific parameters
 interface IAdapter {
     function invest(
@@ -19,7 +18,7 @@ interface IAdapter {
         address from,
         address pullFrom,
         address transferTo
-    ) external payable returns (uint256[] memory amountsTransferred);
+    ) external returns (uint256[] memory amountsTransferred);
 
     function borrow(
         address onBehalfOf,
@@ -27,7 +26,7 @@ interface IAdapter {
         address from,
         address pullFrom,
         address transferTo
-    ) external payable returns (uint256[] memory amountsTransferred);
+    ) external returns (uint256[] memory amountsTransferred);
 
     function repay(
         address onBehalfOf,

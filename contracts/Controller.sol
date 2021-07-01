@@ -10,12 +10,12 @@ import "./oz/token/ERC20/utils/SafeERC20.sol";
 import "./utils/IUniswapV2Router02.sol";
 import "./utils/IWETH.sol";
 
-
 contract Controller is Ownable {
     using SafeERC20 for IERC20;
 
     // uint256 constant ratioPrecision = 10000;
-    uint256 private constant deadline = 0xf000000000000000000000000000000000000000000000000000000000000000;
+    uint256 private constant deadline =
+        0xf000000000000000000000000000000000000000000000000000000000000000;
     address private constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     IUniswapV2Router02 private swapRouter;
@@ -46,7 +46,10 @@ contract Controller is Ownable {
     }
 
     // TODO add security check
-    function addProtocolAdapter(bytes32 name, address adapter) external onlyOwner {
+    function addProtocolAdapter(bytes32 name, address adapter)
+        external
+        onlyOwner
+    {
         require(
             protocolAdapterAddress[name] == address(0),
             "Adapter already added for this protocol"
@@ -54,7 +57,10 @@ contract Controller is Ownable {
         protocolAdapterAddress[name] = adapter;
     }
 
-    function updateProtocolAdapter(bytes32 name, address adapter) external onlyOwner {
+    function updateProtocolAdapter(bytes32 name, address adapter)
+        external
+        onlyOwner
+    {
         require(
             protocolAdapterAddress[name] != address(0),
             "Adapter for this protocol does not exist"
@@ -101,10 +107,7 @@ contract Controller is Ownable {
             protocolAdapterAddress[protocolName] != address(0),
             "Add adapter for the protocol before adding market"
         );
-        require(
-            marketProtocolName[marketAddress] != "",
-            "Market not added"
-        );
+        require(marketProtocolName[marketAddress] != "", "Market not added");
         marketProtocolName[marketAddress] = protocolName;
         Market storage market = markets[marketAddress];
         market.market = contractAddress;
@@ -162,7 +165,7 @@ contract Controller is Ownable {
         address transferTo
     ) internal returns (uint256[] memory amountsWithdrawn) {
         if (borrow) {
-            amountsWithdrawn = adapter.borrow{value: msg.value}(
+            amountsWithdrawn = adapter.borrow(
                 msg.sender,
                 amounts,
                 from,
@@ -170,7 +173,7 @@ contract Controller is Ownable {
                 transferTo
             );
         } else {
-            amountsWithdrawn = adapter.redeem{value: msg.value}(
+            amountsWithdrawn = adapter.redeem(
                 msg.sender,
                 amounts,
                 from,
@@ -218,7 +221,10 @@ contract Controller is Ownable {
         path[1] = toToken;
 
         // Approve swapRouter to pull fromToken;
-        IERC20(fromToken).safeIncreaseAllowance(address(swapRouter), sellAmount);
+        IERC20(fromToken).safeIncreaseAllowance(
+            address(swapRouter),
+            sellAmount
+        );
 
         uint256[] memory amountsOut = swapRouter.swapExactTokensForTokens(
             sellAmount,
@@ -408,7 +414,8 @@ contract Controller is Ownable {
         bool borrow
     ) external returns (uint256[] memory amountsWithdrawn) {
         IAdapter adapter = _getAdapterForMarket(from);
-        return _withdraw(adapter, from, amounts, borrow, msg.sender, msg.sender);
+        return
+            _withdraw(adapter, from, amounts, borrow, msg.sender, msg.sender);
     }
 
     function deposit(
@@ -443,7 +450,15 @@ contract Controller is Ownable {
         );
 
         IAdapter adapter = _getAdapterForMarket(to);
-        return _deposit(adapter, to, toInputTokenAmounts, repay, msg.sender, msg.sender);
+        return
+            _deposit(
+                adapter,
+                to,
+                toInputTokenAmounts,
+                repay,
+                msg.sender,
+                msg.sender
+            );
     }
 
     function migrate(
