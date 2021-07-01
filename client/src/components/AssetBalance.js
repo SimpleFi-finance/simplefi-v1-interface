@@ -20,7 +20,6 @@ const AssetSt = styled.div`
 `;
 
 const AmountSwap = styled.input`
-  //TODO style input
   all: unset;
   width: 250px;
   text-align: right;
@@ -46,7 +45,23 @@ const BalanceSelector = styled.div`
     color: #747782;
     font-size: 16px;
   }
+  div {
+    margin-top: 20px;
+    button {
+      all: unset;
+      cursor: pointer;
+      margin: auto 5px;
+      color: #747782;
+      font-size: 16px;
+    }
+    p {
+      margin: auto 0;
+      color: #747782;
+      font-size: 16px;
+    }
+  }
 `;
+
 const AssetBalance = ({ asset, clickAction, swapAmount, setSwapAmount }) => {
 
   return (
@@ -61,15 +76,23 @@ const AssetBalance = ({ asset, clickAction, swapAmount, setSwapAmount }) => {
           onChange={(e) => setSwapAmount(e.target.value)}
           value={swapAmount || '0.0'}
           min="0.00"
+          max={asset.balance}
           placeholder="0.0"
         >
         </AmountSwap>
       </div>
       {asset?.name &&
         <BalanceSelector>
-        <p>Balance: {asset.balance || '0.0'} {asset.symbol}</p>
-        {/* TODO include this selector of amount */}
-          <p> 25% | 50% | 75% | max</p>
+          <p>Balance: {asset.balance || '0.0'} {asset.symbol}</p>
+          <div>
+            <button onClick={() => setSwapAmount(asset.balance * 0.25) }>25%</button>
+            <p>|</p>
+            <button onClick={() => setSwapAmount(asset.balance * 0.50) }>50%</button>
+            <p>|</p>
+            <button onClick={() => setSwapAmount(asset.balance * 0.75) }>75%</button>
+            <p>|</p>
+            <button onClick={() => setSwapAmount(asset.balance * 1) }>max</button>
+        </div>
         </BalanceSelector>
       }
     </AssetSt>
