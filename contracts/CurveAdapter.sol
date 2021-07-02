@@ -87,7 +87,7 @@ contract CurveAdapter is IAdapter {
         address from,
         address pullFrom,
         address transferTo
-    ) external payable override returns (uint256[] memory amountsTransferred) {
+    ) external override returns (uint256[] memory amountsTransferred) {
         // transfer LP token to contract
         (, address lpToken, ) = Controller(controllerAddress).markets(from);
         uint256 lpBalance = IERC20(lpToken).balanceOf(pullFrom);
@@ -157,7 +157,7 @@ contract CurveAdapter is IAdapter {
         address from,
         address pullFrom,
         address transferTo
-    ) external payable override returns (uint256[] memory amountsTransferred) {}
+    ) external override returns (uint256[] memory amountsTransferred) {}
 
     function repay(
         address onBehalfOf,
