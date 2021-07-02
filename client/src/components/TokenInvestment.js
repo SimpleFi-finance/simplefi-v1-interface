@@ -61,7 +61,7 @@ const TokenInvestment = ({ investment, onSelect }) => {
           <h4>{investment.name}</h4>
         </ProtocolDataSt>
       }
-      <h4> {investment?.balance || '0.0'}</h4>
+      <h4> {Number(investment?.balance).toFixed(4) || '0.0'}</h4>
     </ProtocolInvestmentsSt>
   );
 };

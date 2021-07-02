@@ -4,28 +4,27 @@ import Web3Modal from 'web3modal';
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import React, { useCallback, useEffect, useState } from "react";
 import { ethers } from 'ethers';
-import { INFURA_ID, NETWORKS } from "./constants";
+import { NETWORKS } from "./constants";
 import { Account } from './components'
 import {
   useUserSigner
 } from './utils/hooks';
+
+import SimplefiLogo from './assets/logos/simplefi-logotype.png'
+
 import {
-  Switch,
-  Route
-} from "react-router-dom";
-import { withRouter } from 'react-router';
-import {
-  Landing,
   Dashboard
 } from './containers';
+
 import {
-  NavBar
+  NavBar,
+  Button
 } from './components/UI'
 
 const AppSt = styled.div`
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(#f6eef4, #f5f4f6);
+  background: linear-gradient(#ED40A5, white);
 `;
 
 const web3Modal = new Web3Modal({
@@ -35,7 +34,7 @@ const web3Modal = new Web3Modal({
     walletconnect: {
       package: WalletConnectProvider, // required
       options: {
-        infuraId: INFURA_ID,
+        infuraId: process.env.REACT_APP_INFURA_PROJECT_ID,
       },
     },
   },
@@ -55,7 +54,6 @@ const localProvider = new ethers.providers.StaticJsonRpcProvider(localProviderUr
 const blockExplorer = targetNetwork.blockExplorer;
 
 function App(props) {
-  
   const [injectedProvider, setInjectedProvider] = useState();
   const [address, setAddress] = useState();
 
@@ -71,15 +69,7 @@ function App(props) {
     getAddress();
   }, [userSigner]);
 
-  useEffect(() => {
-    if (address) {
-      props.history.push(`/${address}`);
-    } else {
-      props.history.push(`/`)
-    }
-  }, [address])
-
-  const mainnetInfura = navigator.onLine ? new ethers.providers.StaticJsonRpcProvider("https://mainnet.infura.io/v3/" + INFURA_ID) : null;
+  const mainnetInfura = navigator.onLine ? new ethers.providers.StaticJsonRpcProvider("https://mainnet.infura.io/v3/" + process.env.REACT_APP_INFURA_PROJECT_ID) : null;
   const mainnetProvider = mainnetInfura;
 
   const loadWeb3Modal = useCallback(async () => {
@@ -96,7 +86,6 @@ function App(props) {
       setInjectedProvider(new ethers.providers.Web3Provider(provider));
     });
 
-    // Subscribe to session disconnection
     provider.on("disconnect", (code, reason) => {
       console.log(code, reason);
       logoutOfWeb3Modal();
@@ -112,40 +101,42 @@ function App(props) {
   return (
     <AppSt>
       <NavBar>
-        <h2>
-          Tesser
-        </h2>
-        {props.location.pathname !== '/' &&
+        <img src={SimplefiLogo} alt="simplefi" />
+        {injectedProvider
+          ?
           <Account
-            address={address}
+            address={"0x1467131d0e6074a305b191f68b6daba058ff02fc" ||address}
             localProvider={localProvider}
             userSigner={userSigner}
-            mainnetProvider={mainnetProvider}
+            mainnetProvider={injectedProvider || mainnetProvider}
             web3Modal={web3Modal}
             loadWeb3Modal={loadWeb3Modal}
             logoutOfWeb3Modal={logoutOfWeb3Modal}
             blockExplorer={blockExplorer}
           />
+          :
+          <div style={{
+            height: '50px',
+            width: '250px',
+            margin: '10px 10px 5px',
+            fontSize: '20px'
+          }}>
+            <Button
+              clickAction={() => loadWeb3Modal() }
+            >
+              Connect Wallet
+            </Button>
+          </div>
         }
       </NavBar>
-        <Switch>
-          <Route exact path={`/`}>
-            <Landing
-            history={props.history}
-            loadWeb3Modal={loadWeb3Modal}
-            />
-          </Route>
-          <Route path={`/${address}`}>
-            <Dashboard
-              history={props.history}
-              address={address}
-              userSigner={userSigner}
-              provider={injectedProvider || mainnetProvider}
-            />
-          </Route>
-        </Switch>
+      <Dashboard
+        address={"0x1467131d0e6074a305b191f68b6daba058ff02fc" || address}
+        userSigner={userSigner}
+        provider={injectedProvider}
+        loadWeb3Modal={loadWeb3Modal}
+      />
     </AppSt>
   );
 }
 
-export default withRouter(App);
+export default App;

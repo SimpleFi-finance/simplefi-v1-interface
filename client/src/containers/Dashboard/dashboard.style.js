@@ -1,4 +1,4 @@
-import styled from 'styled-components'
+import styled, {keyframes} from 'styled-components'
 
 export const FeatureSt = styled.div`
   height: auto;
@@ -32,5 +32,64 @@ export const FeatureSt = styled.div`
   }
 `;
 
+export const TitleSt = styled.h2`
+  font-weight: bold;
+  margin: auto 0 15px 15px;
+  font-size: 1.4em;
+`;
+const drop = keyframes`
+  0% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0;
+  }
+  1% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(250px) rotate(360deg);
+    opacity: 0;
+  }
+`
+export const TesserModalSt = styled.div`
+  position: relative;
+  background-image: radial-gradient(circle, #5F40C4 0%, #9646C1 100%);
+  height: 400px;
+  width: 100%;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 
+  span {
+    z-index: 2;
+    width: max-content;
+    min-width: 50px;
+    height: 40px;
+    margin: auto;
+    background-color: white;
+    border-radius: 20px;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    vertical-align: center;
+    box-shadow: 0px 6px 16px -4px rgba(0,0,0,0.69);
+    p {
+      margin: auto;
+      height: 20px;
+    }
+  }
+`;
 
+export const MovingIconSt = styled.div`
+  position: absolute;
+  z-index: 1;
+  animation: ${drop} 2s ease-in infinite;
+  height: max-content;
+  width: max-content;
+  top: ${({topValue}) => topValue}%;
+  left: ${({leftValue}) => leftValue}%;
+  animation-delay: ${({ delay }) => `${delay || 0}s`};
+`;

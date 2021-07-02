@@ -15,8 +15,8 @@ const FilterSt = styled.button`
   cursor: pointer;
   img {
     height: 100%;
-    width: 25px;
-    margin: auto 4px;
+    width: 20px;
+    margin: auto 2px;
     object-fit: contain;
   }
   p {

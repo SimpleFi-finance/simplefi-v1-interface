@@ -1,58 +1,58 @@
 {
   "tokens": [
     {
-      "id": "a",
-      "address": "a",
+      "id": "0x172370d5cd63279efa6d502dab29171933a610af",
+      "address": "0x172370d5cd63279efa6d502dab29171933a610af",
       "name": "Curve",
       "logo": "CRV-logo.png",
       "decimals": 18,
       "symbol": "CRV",
-      "abi": ""
+      "abi": "IERC20"
     },
     {
-      "id": "n",
-      "address": "n",
-      "name": "Matic",
+      "id": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+      "address": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+      "name": "wrapped Matic",
       "logo": "logo-polygon.png",
       "decimals": 18,
-      "symbol": "MATIC",
-      "abi": ""
+      "symbol": "WMATIC",
+      "abi": "IERC20"
     },
     {
-      "id": "b",
-      "address": "b",
+      "id": "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+      "address": "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
       "name": "WBTC",
       "logo": "WBTC-logo.png",
       "decimals": 18,
       "symbol": "WBTC",
-      "abi": ""
+      "abi": "IERC20"
     },
     {
-      "id": "c",
-      "address": "c",
+      "id": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+      "address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
       "name": "USDT",
       "logo": "USDT-logo.png",
       "decimals": 18,
       "symbol": "USDT",
-      "abi": ""
+      "abi": "IERC20"
     },
     {
-      "id": "d",
-      "address": "d",
+      "id": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+      "address": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
       "name": "USDC",
       "logo": "USDC-logo.png",
       "decimals": 18,
       "symbol": "USDC",
-      "abi": ""
+      "abi": "IERC20"
     },
     {
-      "id": "e",
-      "address": "e",
+      "id": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
+      "address": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
       "name": "DAI",
       "logo": "DAI-logo.png",
       "decimals": 18,
       "symbol": "DAI",
-      "abi": ""
+      "abi": "IERC20"
     }
   ],
   "protocols": [
@@ -65,16 +65,16 @@
       "investments": ["am3crv", "am3crv-gauge"]
     },
     {
-      "address": "b",
+      "address": "0xD6DF932A45C0f255f85145f286eA0b292B21C90B",
       "name": "Aave",
       "logo": "AAVE-logo.png",
       "decimals": 18,
       "symbol": "AAVE",
       "abi": "",
-      "investments": ["aave-usd"]
+      "investments": ["aave-usdt", "aave-dai", "aave-usdc"]
     },
     {
-      "address": "c",
+      "address": "0x361a5a4993493ce00f61c32d4ecca5512b82ce90",
       "name": "StakeDAO",
       "logo": "STAKEDAO-logo.png",
       "decimals": 18,
@@ -83,31 +83,34 @@
       "investments": ["stakeDAO-curve.fi-dai-usdc-usdt"]
     },
     {
-      "address": "d",
+      "address": "sushiswap",
       "name": "SushiSwap",
       "logo": "SUSHI-logo.png",
       "decimals": 18,
       "symbol": "SUSHI",
       "abi": "",
-      "investments": ["aave-usd"]
+      "investments": ["usdc-usdt-sushi", "usdc-dai-sushi"]
     },
     {
-      "address": "e",
+      "address": "quickswap",
       "name": "QuickSwap",
       "logo": "quickswap-logo.png",
       "decimals": 18,
       "symbol": "QUICK",
       "abi": "",
-      "investments": ["aave-usd"]
+      "investments": ["usdc-usdt-quick", "wmatic-usdc-quick"]
     }
   ],
   "investments": [
     {
       "id": "am3crv",
       "address": "0x445FE580eF8d70FF569aB36e80c647af338db351",
-      "outputToken": "",
-      "inputTokens": [],
-      "tokenAddress": "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171",
+      "outputToken": "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171",
+      "inputTokens": [
+        "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
+        "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
+        "0x60D55F02A771d515e077c9C2403a1ef324885CeC"
+      ],
       "name": "Curve.fi amDAI/amUSDC/amUSDT",
       "description": "Aave DAI pool LP",
       "symbol": "am3CRV",
@@ -119,7 +122,7 @@
       "id": "am3crv-gauge",
       "address": "0x19793b454d3afc7b454f206ffe95ade26ca6912c",
       "outputToken": "",
-      "inputTokens": [],
+      "inputTokens": ["0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171"],
       "decimals": 18,
       "name": "am3CRV-gauge",
       "description": "Curve farm for the Aave DAI pool LP",
@@ -129,12 +132,11 @@
     },
     {
       "id": "aave-usdt",
-      "address": "",
-      "outputToken": "",
-      "inputTokens": [],
+      "address": "0x60D55F02A771d515e077c9C2403a1ef324885CeC",
+      "outputToken": "0x60D55F02A771d515e077c9C2403a1ef324885CeC",
+      "inputTokens": ["0xc2132D05D31c914a87C6611C10748AEb04B58e8F"],
       "name": "amUSDT",
       "decimals": 18,
-      "tokenAddress": "",
       "description": "USDT deposit in Aave",
       "symbol": "amUSD",
       "abi": "",
@@ -142,54 +144,91 @@
     },
     {
       "id": "aave-usdc",
-      "address": "",
-      "outputToken": "",
-      "inputTokens": [],
+      "address": "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
+      "outputToken": "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
+      "inputTokens": ["0x2791bca1f2de4661ed88a30c99a7a9449aa84174"],
       "name": "amUSDC",
       "decimals": 18,
-      "tokenAddress": "",
       "description": "USDC deposit in Aave",
       "symbol": "amUSD",
       "abi": "",
       "type": "LP"
     },
     {
+      "id": "aave-dai",
+      "address": "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
+      "outputToken": "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
+      "inputTokens": ["0x8f3cf7ad23cd3cadbd9735aff958023239c6a063"],
+      "name": "amDAI",
+      "decimals": 18,
+      "description": "DAI deposit in Aave",
+      "symbol": "amDAI",
+      "abi": "",
+      "type": "LP"
+    },
+    {
       "id": "stakeDAO-curve.fi-dai-usdc-usdt",
-      "address": "",
-      "outputToken": "",
-      "inputTokens": [],
-      "tokenAddress": "",
+      "address": "0x68456B298c230415E2DE7aD4897A79Ee3f1A965a",
+      "outputToken": "0x7d60F21072b585351dFd5E8b17109458D97ec120",
+      "inputTokens": ["0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171"],
       "decimals": 18,
       "name": "StakeDAO Curve.fi amDAI/amUSDC/amUSDT",
       "description": "Passive Aave USD Strategy (Polygon)",
-      "logo": "",
-      "symbol": "",
+      "symbol": "sdam3CRV",
       "abi": "",
       "type": "Farm"
     },
     {
-      "id": "a",
-      "address": "a",
-      "outputToken": "",
-      "inputTokens": [],
-      "name": "SushiSwap",
+      "id": "usdc-usdt-sushi",
+      "address": "0x4b1f1e2435a9c96f7330faea190ef6a7c8d70001",
+      "outputToken": "0x4b1f1e2435a9c96f7330faea190ef6a7c8d70001",
+      "inputTokens": ["0x2791bca1f2de4661ed88a30c99a7a9449aa84174", "0xc2132d05d31c914a87c6611c10748aeb04b58e8f"],
+      "name": "Sushi: USDC-USDT",
       "decimals": 18,
-      "description": "",
-      "symbol": "",
+      "description": "SushiSwap USDC-USDT Pool",
+      "symbol": "SLP: USDC-USDT",
       "abi": "",
-      "type": ""
+      "type": "LP",
+      "balance": "358.98"
     },
     {
-      "id": "v",
-      "address": "b",
-      "name": "QuickSwap",
-      "outputToken": "",
-      "inputTokens": [],
+      "id": "usdc-dai-sushi",
+      "address": "0xcd578f016888b57f1b1e3f887f392f0159e26747",
+      "outputToken": "0xcd578f016888b57f1b1e3f887f392f0159e26747",
+      "inputTokens": ["0x2791bca1f2de4661ed88a30c99a7a9449aa84174", "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063"],
+      "name": "Sushi: USDC-DAI",
       "decimals": 18,
-      "description": "",
-      "symbol": "",
+      "description": "SushiSwap USDC-DAI Pool",
+      "symbol": "SLP: USDC-DAI",
       "abi": "",
-      "type": ""
+      "type": "LP",
+      "balance": "450.30"
+    },
+    {
+      "id": "usdc-usdt-quick",
+      "address": "0x2cf7252e74036d1da831d11089d326296e64a728",
+      "name": "Quick: USDC-USDT",
+      "outputToken": "0x2cf7252e74036d1da831d11089d326296e64a728",
+      "inputTokens": ["0x2791bca1f2de4661ed88a30c99a7a9449aa84174","0xc2132d05d31c914a87c6611c10748aeb04b58e8f"],
+      "decimals": 18,
+      "description": "QuickSwap USDC-USDT Pool",
+      "symbol": "QLP: USDC-USDT",
+      "abi": "",
+      "type": "LP",
+      "balance": "1275.34"
+    },
+    {
+      "id": "wmatic-usdc-quick",
+      "address": "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827",
+      "name": "Quick: WMATIC-USDC",
+      "outputToken": "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827",
+      "inputTokens": ["0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270","0x2791bca1f2de4661ed88a30c99a7a9449aa84174"],
+      "decimals": 18,
+      "description": "QuickSwap WMATIC-USDC Pool",
+      "symbol": "QLP: WMATIC-USDC",
+      "abi": "",
+      "type": "LP",
+      "balance": "40"
     }
   ]
 }

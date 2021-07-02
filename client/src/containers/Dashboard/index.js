@@ -8,13 +8,19 @@ import {
 import investmentsData from '../../utils/helpers/chainDataSources.json';
 import {
   AssetBalance,
-  AssetsList,
-  SelectionModal
+  Modal,
+  SelectionModal,
+  AssetLogo
 } from '../../components';
 
 import {
   FeatureSt,
+  TitleSt,
+  TesserModalSt,
+  MovingIconSt  
 } from './dashboard.style';
+import { ethers } from 'ethers';
+import IERC20 from '../../utils/helpers/IERC20.json'
 
 const initState = {
   from: {
@@ -22,49 +28,65 @@ const initState = {
     value: null
   },
   to: {
-    asset: {},
-    value: null
+    asset: {}
   }
 };
 
-const Dashboard = ({ history, address, provider, userSigner }) => {
-  const [modal, setModal] = useState({state: false, direction: null});
+const Dashboard = ({ address, provider, userSigner, loadWeb3Modal }) => {
+  const [modal, setModal] = useState({ state: false, direction: null });
   const [swapSelection, setSwapSelection] = useState(initState);
   const [tokens, setTokens] = useState([]);
   const [investments, setInvestments] = useState([]);
+  const [tesserStarted, setTesser] = useState(false);
 
   useEffect(() => {
-    if (address) {
-      async function getBalances(data) {
-        // query balance
-        const balances = []
-        for (let asset of data) {
-          // TODO query user balances
-          // attach contract and query balance => convert to number with right decimals
-          asset['balance'] = 12
+    if (address && !!provider) {
+      async function getBalances(data, type) {
+        const assets = [...data];
+        for (let asset of assets) {
+          if (!asset.balance) {
+            try {
+              const contract = new ethers.Contract(asset.outputToken || asset.address, IERC20, provider);
+              const balance = await contract.balanceOf(address.toLowerCase());
+              const formatBalance = ethers.utils.formatUnits(balance, asset.decimals)
+              asset['balance'] = formatBalance;
+            } catch (err) {
+              console.log(err)
+              alert('Check networks')
+            }
+          }
         }
-        return balances;
+        if (type === 'tokens') {
+          setTokens(assets);
+        } else {
+          setInvestments(assets);
+        }
       };
       const tokens = [...investmentsData.tokens];
       const investments = [...investmentsData.investments];
-      getBalances(tokens)
-      getBalances(investments)
-      console.log(tokens)
-      setTokens(tokens)
-      setInvestments(investments)
-    } else {
-      history.push('/');
+      getBalances(tokens, 'tokens')
+      getBalances(investments, 'investments')
     }
-  }, [address]);
+  }, [address, provider]);
 
   const setSwapAsset = (asset, direction) => {
-    const swaps = {
-      ...swapSelection,
-      [direction]: {
-        asset: asset,
-        value: 0.0,
-      }
-    };
+    let swaps = {}
+    if (direction === 'from') {
+      swaps = {
+        ...swapSelection,
+        [direction]: {
+          asset: asset,
+          value: 0.0,
+        }
+      };
+    } else {
+      swaps = {
+        ...swapSelection,
+        [direction]: {
+          asset: asset
+        }
+      };
+    }
     setSwapSelection(swaps);
     setModal({ state: false, direction: 'null' });
   };
@@ -81,50 +103,107 @@ const Dashboard = ({ history, address, provider, userSigner }) => {
   };
 
   const openSelector = (direction) => {
-    setModal({state: true, direction: direction})
+    setModal({ state: true, direction: direction })
   };
 
   const fromSelected = !!(swapSelection.from.asset !== {} && swapSelection.from.value && swapSelection.from.value > 0)
-  const toSelected = !!(swapSelection.to.asset !== {} && swapSelection.to.value && swapSelection.to.value > 0)
+  const toSelected = !!(swapSelection.to.asset !== {})
   const buttonDisabled = !(fromSelected && toSelected);
 
+  const tesserInvestments = () => {
+    console.log('tessering')
+    // logic to approve connection and transaction goes here
+    setTesser(!tesserStarted)
+    setModal({ state: true })
+  }
+
+  const getRandomIntInclusive = (min, max) => {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  };
+  
+  const tesseringModal = () => {
+    let logoFrom = swapSelection.from.asset.logo;
+    if (!logoFrom) {
+      logoFrom = investmentsData.protocols.find(prot => prot.investments.includes(swapSelection.from.asset.id)).logo
+    }
+    
+    let logoTo = swapSelection.to.asset.logo
+    if (!logoTo) {
+      logoTo = investmentsData.protocols.find(prot => prot.investments.includes(swapSelection.to.asset.id)).logo
+    }
+    
+    const droppingLogos = [];
+    for (let x = 0; x < 10; x++) {
+      droppingLogos.push(
+        <MovingIconSt
+          key={x}
+          delay={x / 10}
+          topValue={getRandomIntInclusive(2, 30)}
+          leftValue={getRandomIntInclusive(2, 90)}
+        >
+          <AssetLogo logo={logoFrom} height='45px' width='45px' />
+        </MovingIconSt>
+      );
+    }
+
+    return (
+      <TesserModalSt>
+        <span> <p>{swapSelection.from.asset.symbol}: {swapSelection.from.value}</p></span>
+          {droppingLogos}
+          <span><AssetLogo logo={logoTo} height='30px' width='30px'/><p style={{marginLeft: '5px'}}> {swapSelection.to.asset.name}</p></span>
+      </TesserModalSt>
+    );
+  };
+
+  const ModalContent = tesserStarted
+    ? tesseringModal()
+    : <SelectionModal
+        investmentsData={{
+          tokens: tokens,
+          investments: investments,
+          protocols: [...investmentsData.protocols]
+        }}
+        setSwapAsset={(asset) => setSwapAsset(asset, modal.direction)}
+      />
+  
   return (
     <ContainerSt>
       {modal.state &&
         //TODO add transition here
-        <AssetsList
-          closeModal={() => setModal({ state: false, direction: null })}
-        content={
-          <SelectionModal
-            investmentsData={{
-              tokens: tokens,
-              investments: investments,
-              protocols: [...investmentsData.protocols]
-            }}
-            setSwapAsset={(asset) => setSwapAsset(asset, modal.direction)}
-          />}
+        <Modal
+          closeModal={() => {setModal({ state: false, direction: null }); setTesser(false)}}
+          content={ModalContent}
         />
       }
       <FeatureSt>
-        <span> Tesser </span>
+        <TitleSt> Tesser </TitleSt>
         <AssetBalance
           asset={swapSelection.from.asset}
           clickAction={() => openSelector('from')}
           swapAmount={swapSelection.from.value}
           setSwapAmount={(value) => setSwapValue(value, 'from')}
+          direction={'from'}
+          provider={provider}
         />
         <img src={SwitchIcon} alt=""/>
         <AssetBalance
           asset={swapSelection.to.asset}
           clickAction={() => openSelector('to')}
-          swapAmount={swapSelection.to.value}
-          setSwapAmount={(value) => setSwapValue(value, 'to')}
+          direction={'to'}
+          provider={provider}
         />
-        <div style={{ height: '70px', width: 'calc(100% - 20px)', margin: '10px 10px 5px', fontSize:'24px' }}>
-          {address
+        <div style={{
+          height: '70px',
+          width: 'calc(100% - 20px)',
+          margin: '10px 10px 5px',
+          fontSize: '24px'
+        }}>
+          {provider
             ?
             <Button
-              clickAction={() => { console.log('fire contract') }}
+              clickAction={() => tesserInvestments()}
               disable={buttonDisabled}
             >
               {buttonDisabled ?
@@ -135,7 +214,7 @@ const Dashboard = ({ history, address, provider, userSigner }) => {
             :
             <Button
               type='error'
-              clickAction={() => { console.log('connect wallet')}}
+              clickAction={() => loadWeb3Modal() }
             >
               Connect Wallet
             </Button>

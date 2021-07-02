@@ -62,7 +62,14 @@ const BalanceSelector = styled.div`
   }
 `;
 
-const AssetBalance = ({ asset, clickAction, swapAmount, setSwapAmount }) => {
+const AssetBalance = ({
+  asset,
+  clickAction,
+  swapAmount,
+  setSwapAmount,
+  direction,
+  provider
+}) => {
 
   return (
     <AssetSt>
@@ -70,29 +77,38 @@ const AssetBalance = ({ asset, clickAction, swapAmount, setSwapAmount }) => {
         <AssetSelector
           currentAsset={asset}
           clickAction={clickAction}
+          provider={provider}
         />
-        <AmountSwap
-          type='number'
-          onChange={(e) => setSwapAmount(e.target.value)}
-          value={swapAmount || '0.0'}
-          min="0.00"
-          max={asset.balance}
-          placeholder="0.0"
-        >
-        </AmountSwap>
+        {direction !== 'to' && !!provider && 
+          <AmountSwap
+            type='number'
+            onChange={(e) => setSwapAmount(e.target.value)}
+            value={swapAmount || '0.0'}
+            min="0.00"
+            max={asset.balance}
+            placeholder="0.0"
+          >
+          </AmountSwap>
+        }
       </div>
-      {asset?.name &&
+      {asset?.name  &&
         <BalanceSelector>
-          <p>Balance: {asset.balance || '0.0'} {asset.symbol}</p>
-          <div>
-            <button onClick={() => setSwapAmount(asset.balance * 0.25) }>25%</button>
-            <p>|</p>
-            <button onClick={() => setSwapAmount(asset.balance * 0.50) }>50%</button>
-            <p>|</p>
-            <button onClick={() => setSwapAmount(asset.balance * 0.75) }>75%</button>
-            <p>|</p>
-            <button onClick={() => setSwapAmount(asset.balance * 1) }>max</button>
-        </div>
+        {direction !== 'to' ?
+          <>
+            <p>Balance: {Number(asset.balance).toFixed(4) || '0.0'} {asset.symbol}</p>
+            <div>
+              <button onClick={() => setSwapAmount(Number(asset.balance * 0.25).toFixed(4)) }>25%</button>
+              <p>|</p>
+              <button onClick={() => setSwapAmount(Number(asset.balance * 0.5).toFixed(4)) }>50%</button>
+              <p>|</p>
+              <button onClick={() => setSwapAmount(Number(asset.balance * 0.75).toFixed(4)) }>75%</button>
+              <p>|</p>
+              <button onClick={() => setSwapAmount(Number(asset.balance * 1).toFixed(4)) }>max</button>
+            </div>
+          </>
+          :
+          <p> Current Balance: {Number(asset.balance).toFixed(4) || '0.0'} {asset.symbol}</p>
+        }
         </BalanceSelector>
       }
     </AssetSt>
