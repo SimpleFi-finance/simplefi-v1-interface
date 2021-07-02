@@ -245,13 +245,14 @@ async function initBalances(testAccount) {
  * Add adapter and pool data
  */
 async function addAaveMarkets() {
-  // dai
   await controller.addProtocolAdapter(
-    ethers.utils.formatBytes32String("Aave Polygon DAI"),
+    ethers.utils.formatBytes32String("Aave Polygon pool"),
     aaveAdapter.address
   );
+
+  // dai
   await controller.addMarket(
-    ethers.utils.formatBytes32String("Aave Polygon DAI"),
+    ethers.utils.formatBytes32String("Aave Polygon pool"),
     aDAI,
     LENDING_POOL,
     aDAI,
@@ -261,12 +262,8 @@ async function addAaveMarkets() {
   );
 
   // usdc
-  await controller.addProtocolAdapter(
-    ethers.utils.formatBytes32String("Aave Polygon USDC"),
-    aaveAdapter.address
-  );
   await controller.addMarket(
-    ethers.utils.formatBytes32String("Aave Polygon USDC"),
+    ethers.utils.formatBytes32String("Aave Polygon pool"),
     aUSDC,
     LENDING_POOL,
     aUSDC,
@@ -275,13 +272,9 @@ async function addAaveMarkets() {
     [wMATIC]
   );
 
-  //usdt
-  await controller.addProtocolAdapter(
-    ethers.utils.formatBytes32String("Aave Polygon USDT"),
-    aaveAdapter.address
-  );
+  // usdt
   await controller.addMarket(
-    ethers.utils.formatBytes32String("Aave Polygon USDT"),
+    ethers.utils.formatBytes32String("Aave Polygon pool"),
     aUSDT,
     LENDING_POOL,
     aUSDT,
@@ -290,13 +283,9 @@ async function addAaveMarkets() {
     [wMATIC]
   );
 
-  // wETH
-  await controller.addProtocolAdapter(
-    ethers.utils.formatBytes32String("Aave Polygon wETH"),
-    aaveAdapter.address
-  );
+  // weth
   await controller.addMarket(
-    ethers.utils.formatBytes32String("Aave Polygon wETH"),
+    ethers.utils.formatBytes32String("Aave Polygon pool"),
     awETH,
     LENDING_POOL,
     awETH,
@@ -305,13 +294,9 @@ async function addAaveMarkets() {
     [wMATIC]
   );
 
-  // wBTC
-  await controller.addProtocolAdapter(
-    ethers.utils.formatBytes32String("Aave Polygon wBTC"),
-    aaveAdapter.address
-  );
+  // wbtc
   await controller.addMarket(
-    ethers.utils.formatBytes32String("Aave Polygon wBTC"),
+    ethers.utils.formatBytes32String("Aave Polygon pool"),
     awBTC,
     LENDING_POOL,
     awBTC,
@@ -321,12 +306,8 @@ async function addAaveMarkets() {
   );
 
   // aave
-  await controller.addProtocolAdapter(
-    ethers.utils.formatBytes32String("Aave Polygon AAVE"),
-    aaveAdapter.address
-  );
   await controller.addMarket(
-    ethers.utils.formatBytes32String("Aave Polygon AAVE"),
+    ethers.utils.formatBytes32String("Aave Polygon pool"),
     aAAVE,
     LENDING_POOL,
     aAAVE,
@@ -335,13 +316,9 @@ async function addAaveMarkets() {
     [wMATIC]
   );
 
-  // wMatic
-  await controller.addProtocolAdapter(
-    ethers.utils.formatBytes32String("Aave Polygon wMatic"),
-    aaveAdapter.address
-  );
+  // wmatic
   await controller.addMarket(
-    ethers.utils.formatBytes32String("Aave Polygon wMatic"),
+    ethers.utils.formatBytes32String("Aave Polygon pool"),
     awMATIC,
     LENDING_POOL,
     awMATIC,
