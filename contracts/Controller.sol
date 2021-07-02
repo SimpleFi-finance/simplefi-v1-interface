@@ -13,7 +13,8 @@ contract Controller is Ownable {
     using SafeERC20 for IERC20;
 
     // uint256 constant ratioPrecision = 10000;
-    uint256 private constant deadline = 0xf000000000000000000000000000000000000000000000000000000000000000;
+    uint256 private constant deadline =
+        0xf000000000000000000000000000000000000000000000000000000000000000;
     address private constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     IUniswapV2Router02 private swapRouter;
@@ -219,7 +220,10 @@ contract Controller is Ownable {
         path[1] = toToken;
 
         // Approve swapRouter to pull fromToken;
-        IERC20(fromToken).safeIncreaseAllowance(address(swapRouter), sellAmount);
+        IERC20(fromToken).safeIncreaseAllowance(
+            address(swapRouter),
+            sellAmount
+        );
 
         uint256[] memory amountsOut = swapRouter.swapExactTokensForTokens(
             sellAmount,
@@ -409,7 +413,8 @@ contract Controller is Ownable {
         bool borrow
     ) external returns (uint256[] memory amountsWithdrawn) {
         IAdapter adapter = _getAdapterForMarket(from);
-        return _withdraw(adapter, from, amounts, borrow, msg.sender, msg.sender);
+        return
+            _withdraw(adapter, from, amounts, borrow, msg.sender, msg.sender);
     }
 
     function deposit(
