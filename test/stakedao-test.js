@@ -11,7 +11,7 @@ const STAKE_DAO_TOKEN = "0x361a5a4993493ce00f61c32d4ecca5512b82ce90";
 const CURVE_AAVE_LP_TOKEN = "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171";
 const wMATIC = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
 
-describe("CurveAdapter", function () {
+describe("StakeDaoAdapter", function () {
   before(async () => {
     // account used for all the tests
     [testSigner] = await ethers.getSigners();
