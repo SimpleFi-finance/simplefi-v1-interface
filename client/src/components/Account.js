@@ -4,11 +4,11 @@ import Address from './Address'
 import styled from 'styled-components'
 
 const AccountSt = styled.div`
-  border: 1px solid darkviolet;
+  border: 1px solid #5F40C4;
   width: max-content;
   height: min-content;
-  border-radius: 40px;
-  padding: 10px 20px;
+  border-radius: 30px;
+  padding: 5px 10px;
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
@@ -29,8 +29,6 @@ export default function Account({
         <Button
           key="logoutbutton"
           clickAction={logoutOfWeb3Modal}
-          type="error"
-          style={{ margin: 'auto' }}
         >
           logout
         </Button>,
@@ -40,7 +38,6 @@ export default function Account({
         <Button
           key="loginbutton"
           clickAction={loadWeb3Modal}
-          style={{ margin: 'auto' }}
         >
           connect
         </Button>,
@@ -69,7 +66,7 @@ export default function Account({
   return (
   <AccountSt>
     {display}
-    <div style={{ height: '40px', width: '100px', margin: 'auto' }}>
+    <div style={{ height: '36px', width: '100px', margin: '0 auto' }}>
       {modalButtons}
     </div>
   </AccountSt>

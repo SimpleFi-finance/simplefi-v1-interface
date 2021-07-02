@@ -13,19 +13,20 @@ const OverlaySt = styled.div`
 
 const ModalSt = styled.div`
   position: absolute;
-  top: 25%;
-  left: calc(25% - 10px);
-  width: 50%;
-  height: 60%;
+  top: 20%;
+  left: calc(50% - 300px);
+  width: 80%;
+  max-width: 600px;
+  height: max-content;
+  max-height: 70%;
   background-color: white;
   border-radius: 20px;
   display: flex;
   flex-direction: column;
-  padding: 10px;
   z-index: 3;
 `;
 
-const AssetsList = ({closeModal, content}) => {
+const Modal = ({closeModal, content}) => {
   return (
     <>
       <OverlaySt
@@ -39,4 +40,4 @@ const AssetsList = ({closeModal, content}) => {
   );
 };
 
-export default AssetsList;
+export default Modal;

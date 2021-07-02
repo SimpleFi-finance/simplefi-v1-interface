@@ -11,7 +11,7 @@ import {
 const ModalTitleSectionSt = styled.div`
   display: flex;
   flex-direction: column;
-  padding: 5px;
+  padding: 15px;
   border-bottom: 1px solid #CCCCCC;
 
   div {
@@ -23,6 +23,10 @@ const ModalTitleSectionSt = styled.div`
     display: flex;
     flex-direction: row;
     margin: auto 2px;
+  }
+  h4 {
+    font-size: 0.9em;
+    margin: 4px;
   }
 `;
 
@@ -43,8 +47,9 @@ const SelectorSt = styled.h3`
 
 const ModalTitleSt = styled.div`
   display: flex;
+  font-size: 0.9em;
   flex-direction: row;
-  margin: 5px 0 15px 0;
+  margin: 5px 0 10px 0;
 `;
 
 const SelectionModal = ({investmentsData, setSwapAsset}) => {
@@ -87,7 +92,6 @@ const SelectionModal = ({investmentsData, setSwapAsset}) => {
 
   if (!!filter.protocol.length) {
     protocols = protocols.filter(prot => filter.protocol.includes(prot.address))
-    //TODO add logic to filter tokens by protocol
   } else {
     protocols = [...investmentsData.protocols]
   }
@@ -95,7 +99,6 @@ const SelectionModal = ({investmentsData, setSwapAsset}) => {
   // filter resulting asset here and send back cleared asset
 
   const selectAsset = (assetId) => {
-    console.log(entity, assetId)
     const asset = investmentsData[entity].find(asset => asset.id === assetId)
     setSwapAsset(asset)
   }

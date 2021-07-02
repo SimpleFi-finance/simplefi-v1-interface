@@ -16,6 +16,11 @@ const NavBar = styled.div`
     letter-spacing: 1px;
     font-size: 1.6em;
   }
+
+  img {
+    height: 60px;
+    object-fit: contain;
+  }
 `;
 
 export default NavBar;
