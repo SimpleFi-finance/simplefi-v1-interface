@@ -105,7 +105,7 @@ function App(props) {
         {injectedProvider
           ?
           <Account
-            address={"0x1467131d0e6074a305b191f68b6daba058ff02fc" ||address}
+            address={address}
             localProvider={localProvider}
             userSigner={userSigner}
             mainnetProvider={injectedProvider || mainnetProvider}
@@ -130,7 +130,7 @@ function App(props) {
         }
       </NavBar>
       <Dashboard
-        address={"0x1467131d0e6074a305b191f68b6daba058ff02fc" || address}
+        address={address}
         userSigner={userSigner}
         provider={injectedProvider}
         loadWeb3Modal={loadWeb3Modal}
