@@ -6,8 +6,10 @@ import "hardhat/console.sol";
 import "./IAdapter.sol";
 import "./oz/access/Ownable.sol";
 import "./oz/token/ERC20/utils/SafeERC20.sol";
+import "./oz/utils/Address.sol";
 import "./utils/IUniswapV2Router02.sol";
 import "./utils/IWETH.sol";
+import './utils/UniswapV2Library.sol';
 
 contract Controller is Ownable {
     using SafeERC20 for IERC20;
@@ -16,9 +18,11 @@ contract Controller is Ownable {
     uint256 private constant deadline =
         0xf000000000000000000000000000000000000000000000000000000000000000;
     address private constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address private constant ADDRESS_ZERO = 0x0000000000000000000000000000000000000000;
 
     IUniswapV2Router02 private swapRouter;
     IWETH private swapWETH;
+    address public swapFactory;
 
     // Mapping of market address to protocol name
     mapping(address => bytes32) public marketProtocolName;
@@ -38,10 +42,12 @@ contract Controller is Ownable {
     // Mapping of logical market address to Market struct
     // Actuall contract address to which the adapter needs to interact can be found in Marlet.market
     mapping(address => Market) public markets;
+    mapping(address => address) public ouputTokenToMarket;
 
     constructor(address _swapRouter, address _weth) {
         swapRouter = IUniswapV2Router02(_swapRouter);
         swapWETH = IWETH(_weth);
+        swapFactory = swapRouter.factory();
     }
 
     // TODO add security check
@@ -91,6 +97,8 @@ contract Controller is Ownable {
         market.weth = weth;
         market.inputTokens = inputTokens;
         market.rewardTokens = rewardTokens;
+
+        ouputTokenToMarket[outputToken] = marketAddress;
     }
 
     function updateMarket(
@@ -114,6 +122,8 @@ contract Controller is Ownable {
         market.weth = weth;
         market.inputTokens = inputTokens;
         market.rewardTokens = rewardTokens;
+
+        ouputTokenToMarket[outputToken] = marketAddress;
     }
 
     function getMarketInputTokens(address _market)
@@ -244,20 +254,29 @@ contract Controller is Ownable {
     //     return 1000;
     // }
 
+    function _swapPairExists(address fromToken, address toToken) internal view returns(bool) {
+        address pair = UniswapV2Library.pairFor(swapFactory, fromToken, toToken);
+        return Address.isContract(pair);
+    }
+
     function _isIntermediateSwapRequired(
         address[] memory fromInputTokens,
         address[] memory toInputTokens
     )
         internal
-        pure
+        view
         returns (
             bool result,
             bool[] memory sellFromTokens,
-            uint256[] memory foundToTokens
+            uint256[] memory foundToTokens,
+            address tokenToBuy,
+            address[] memory depositFromTokens
         )
     {
         foundToTokens = new uint256[](toInputTokens.length);
         sellFromTokens = new bool[](fromInputTokens.length);
+        depositFromTokens = new address[](fromInputTokens.length);
+
         for (uint256 i = 0; i < fromInputTokens.length; i++) {
             bool found = false;
             uint256 foundIndex;
@@ -275,17 +294,9 @@ contract Controller is Ownable {
                 sellFromTokens[i] = true;
             }
         }
-    }
 
-    function _swapToIntermediateToken(
-        address[] memory fromInputTokens,
-        address[] memory toInputTokens,
-        bool[] memory sellFromTokens,
-        uint256[] memory foundToTokens,
-        uint256[] memory amounts
-    ) internal returns (address tokenToBuy, uint256 amountBought) {
-        tokenToBuy = toInputTokens[0];
         // Buy token which is not already available to reduce number of swaps
+        tokenToBuy = toInputTokens[0];
         if (toInputTokens.length > 1) {
             for (uint256 j = 1; j < toInputTokens.length; j++) {
                 if (foundToTokens[j - 1] > 0) {
@@ -296,11 +307,62 @@ contract Controller is Ownable {
             }
         }
 
+        // Check if swap of sell tokens to tokenToBuy can be done
+        // if not then find market to which it can be deposited to get the desired token
+        // If no market found then revert with reason unsupported tesser
+        for (uint256 i = 0; i < fromInputTokens.length; i++) {
+            if (sellFromTokens[i]) {
+                bool swapable = _swapPairExists(fromInputTokens[i], tokenToBuy);
+                if (!swapable) {
+                    address market = ouputTokenToMarket[tokenToBuy];
+                    require(market != ADDRESS_ZERO, "Tesser not supported");
+                    address toToken = markets[market].inputTokens[0];
+                    swapable = _swapPairExists(fromInputTokens[i], toToken);
+                    require(swapable, "Tesser not supported");
+                    depositFromTokens[i] = market;
+                    sellFromTokens[i] = false;
+                }
+            }
+        }
+    }
+
+    function _swapToIntermediateToken(
+        address[] memory fromInputTokens,
+        bool[] memory sellFromTokens,
+        uint256[] memory amounts,
+        address tokenToBuy
+    ) internal returns (uint256 amountBought) {
         for (uint256 i = 0; i < fromInputTokens.length; i++) {
             if (!sellFromTokens[i]) {
                 continue;
             }
             amountBought += _swap(fromInputTokens[i], tokenToBuy, amounts[i]);
+        }
+    }
+
+    function _depositToIntermediateMarket(
+        address[] memory fromInputTokens,
+        uint256[] memory amounts,
+        address tokenToBuy,
+        address[] memory depositFromTokens
+    ) internal returns (uint256 amountAfterDepositing) {
+        for (uint256 i = 0; i < fromInputTokens.length; i++) {
+            if (depositFromTokens[i] != ADDRESS_ZERO) {
+                IAdapter adapter = _getAdapterForMarket(depositFromTokens[i]);
+                address[] memory depositInputTokens = markets[depositFromTokens[i]].inputTokens;
+                uint256[] memory depositAmounts = new uint256[](depositInputTokens.length);
+
+                // Swap deposit token if required
+                if(fromInputTokens[i] != depositInputTokens[0]) {
+                    depositAmounts[0] = _swap(fromInputTokens[i], depositInputTokens[0], amounts[i]);
+                } else {
+                    depositAmounts[0] = amounts[i];
+                }
+
+                IERC20(depositInputTokens[0]).approve(address(adapter), depositAmounts[0]);
+                _deposit(adapter, depositFromTokens[i], depositAmounts, false, address(this), address(this));
+                amountAfterDepositing += IERC20(tokenToBuy).balanceOf((address(this)));
+            }
         }
     }
 
@@ -312,17 +374,26 @@ contract Controller is Ownable {
         (
             bool isSwapRequired,
             bool[] memory sellFromTokens,
-            uint256[] memory foundToTokens
+            uint256[] memory foundToTokens,
+            address tokenToBuy,
+            address[] memory depositFromTokens
         ) = _isIntermediateSwapRequired(fromInputTokens, toInputTokens);
-        address tokenBought;
+
         uint256 amountBought;
+        uint256 amountAfterDepositing;
         if (isSwapRequired) {
-            (tokenBought, amountBought) = _swapToIntermediateToken(
+            amountBought = _swapToIntermediateToken(
                 fromInputTokens,
-                toInputTokens,
                 sellFromTokens,
-                foundToTokens,
-                amounts
+                amounts,
+                tokenToBuy
+            );
+
+            amountAfterDepositing = _depositToIntermediateMarket(
+                fromInputTokens, 
+                amounts, 
+                tokenToBuy, 
+                depositFromTokens
             );
         }
 
@@ -331,8 +402,8 @@ contract Controller is Ownable {
             if (foundToTokens[j] > 0) {
                 toInputTokenAmounts[j] = amounts[foundToTokens[j] - 1];
             }
-            if (toInputTokens[j] == tokenBought) {
-                toInputTokenAmounts[j] = amountBought;
+            if (toInputTokens[j] == tokenToBuy) {
+                toInputTokenAmounts[j] = amountBought + amountAfterDepositing;
             }
         }
     }
