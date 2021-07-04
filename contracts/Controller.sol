@@ -319,6 +319,7 @@ contract Controller is Ownable {
                     address toToken = markets[market].inputTokens[0];
                     swapable = _swapPairExists(fromInputTokens[i], toToken);
                     require(swapable, "Tesser not supported");
+                    // TODO extend for ultimate flexibility
                     depositFromTokens[i] = market;
                     sellFromTokens[i] = false;
                 }

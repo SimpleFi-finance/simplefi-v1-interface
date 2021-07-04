@@ -172,7 +172,7 @@ async function main() {
     account = accounts[0];
     console.log("Account address", account.address);
 
-    controller = await ethers.getContractAt("Controller", "0xa31F4c0eF2935Af25370D9AE275169CCd9793DA3");
+    controller = await ethers.getContractAt("Controller", "0x4f42528B7bF8Da96516bECb22c1c6f53a8Ac7312");
 
     //await depositETHToAave();
     //await depositETHToDAIAave();
