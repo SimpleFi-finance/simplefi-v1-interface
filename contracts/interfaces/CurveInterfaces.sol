@@ -62,17 +62,22 @@ interface ICurveDeposit {
 }
 
 interface ICurveGauge {
-    function balanceOf(address addr) external view returns (uint256);
+    function balanceOf(address arg0) external view returns (uint256);
 
-    function approve(address spender, uint256 amount) external returns (bool);
+    function lp_token() external view returns (address);
+
+    function approve(address _spender, uint256 _value) external returns (bool);
+
+    function deposit(uint256 _value) external;
 
     function deposit(uint256 _value, address _addr) external;
 
-    function withdraw(uint256 _value) external;
+    function withdraw(uint256 _value, bool _claim_rewards) external;
 
     function claim_rewards(address _addr) external;
 
-    function minter() external view returns (address);
-
-    function set_approve_deposit(address addr, bool can_deposit) external;
+    function claimable_reward(address _addr, address _token)
+        external
+        view
+        returns (uint256);
 }

@@ -40,8 +40,9 @@ describe("AaveAdapter", function () {
     );
 
     // deploy controller
+    const quickswapRuter = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff";
     const Controller = await ethers.getContractFactory("Controller");
-    controller = await Controller.deploy("0x0000000000000000000000000000000000000000", wMATIC);
+    controller = await Controller.deploy(quickswapRuter, wMATIC);
     await controller.deployed();
 
     // deploy Aave adapter

@@ -22,8 +22,9 @@ describe("StakeDaoAdapter", function () {
     curveLpToken = await ethers.getContractAt("IERC20", CURVE_AAVE_LP_TOKEN, testSigner);
 
     // deploy controller
+    const quickswapRuter = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff";
     const Controller = await ethers.getContractFactory("Controller");
-    controller = await Controller.deploy("0x0000000000000000000000000000000000000000", wMATIC);
+    controller = await Controller.deploy(quickswapRuter, wMATIC);
     await controller.deployed();
 
     // deploy Stake Dao adapter
@@ -86,10 +87,11 @@ describe("StakeDaoAdapter", function () {
     const sdam3CrvBalanceBefore = await sdam3Crv.balanceOf(testAccount);
 
     // approve LP token for burning and unstake
-    await sdam3Crv.approve(stakeDaoAdapter.address, sdam3CrvBalanceBefore);
+    const sdam3CrvToUnstake = sdam3CrvBalanceBefore / 2;
+    await sdam3Crv.approve(stakeDaoAdapter.address, sdam3CrvToUnstake);
     await stakeDaoAdapter.redeem(
       testAccount,
-      [sdam3CrvBalanceBefore],
+      [sdam3CrvToUnstake],
       STAKE_DAO_LP,
       testAccount,
       testAccount
