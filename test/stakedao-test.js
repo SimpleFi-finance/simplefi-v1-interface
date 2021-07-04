@@ -1,8 +1,9 @@
 const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 
-let controller, stakeDaoAdapter, stakeDaoLpPool;
+let controller, stakeDaoAdapter, stakeDaoFarmAdapter, stakeDaoLpPool;
 let testAccount, testSigner;
+let amount_of_sdam3Crv_staked;
 
 const STAKE_DAO_LP = "0x7d60F21072b585351dFd5E8b17109458D97ec120";
 const STAKE_DAO_YIELD_FARM = "0x68456B298c230415E2DE7aD4897A79Ee3f1A965a";
@@ -19,6 +20,12 @@ describe("StakeDaoAdapter", function () {
 
     // get contracts
     stakeDaoLpPool = await ethers.getContractAt("IStakeDaoLpPool", STAKE_DAO_LP, testSigner);
+    stakeDaoFarm = await ethers.getContractAt(
+      "IStakeDaoYieldFarm",
+      STAKE_DAO_YIELD_FARM,
+      testSigner
+    );
+
     curveLpToken = await ethers.getContractAt("IERC20", CURVE_AAVE_LP_TOKEN, testSigner);
 
     // deploy controller
@@ -87,7 +94,7 @@ describe("StakeDaoAdapter", function () {
     const sdam3CrvBalanceBefore = await sdam3Crv.balanceOf(testAccount);
 
     // approve LP token for burning and unstake
-    const sdam3CrvToUnstake = sdam3CrvBalanceBefore / 2;
+    const sdam3CrvToUnstake = sdam3CrvBalanceBefore.div(2);
     await sdam3Crv.approve(stakeDaoAdapter.address, sdam3CrvToUnstake);
     await stakeDaoAdapter.redeem(
       testAccount,
@@ -103,6 +110,45 @@ describe("StakeDaoAdapter", function () {
 
     assert(am3CrvBalanceBefore < am3CrvBalanceAfter);
     assert(sdam3CrvBalanceBefore > sdam3CrvBalanceAfter);
+  });
+
+  it("should stake sdam3Crv to Stake Dao yield farm", async function () {
+    await initStakeDaoFarm();
+
+    const sdam3Crv = await ethers.getContractAt("IERC20", STAKE_DAO_LP, testSigner);
+    const sdam3CrvBalanceBefore = await sdam3Crv.balanceOf(testAccount);
+
+    // approve sdam3Crv and stake
+    await sdam3Crv.approve(stakeDaoFarmAdapter.address, sdam3CrvBalanceBefore);
+    await stakeDaoFarmAdapter.invest(
+      testAccount,
+      [sdam3CrvBalanceBefore],
+      STAKE_DAO_YIELD_FARM,
+      testAccount,
+      testAccount
+    );
+
+    amount_of_sdam3Crv_staked = sdam3CrvBalanceBefore;
+
+    const sdam3CrvBalanceAfter = await sdam3Crv.balanceOf(testAccount);
+    assert(sdam3CrvBalanceAfter < sdam3CrvBalanceBefore);
+  });
+
+  it("should unstake sdam3Crv from Stake Dao yield farm", async function () {
+    const sdam3Crv = await ethers.getContractAt("IERC20", STAKE_DAO_LP, testSigner);
+    const sdam3CrvBalanceBefore = await sdam3Crv.balanceOf(testAccount);
+
+    // unstake sdam3Crv
+    await stakeDaoFarmAdapter.redeem(
+      testAccount,
+      [amount_of_sdam3Crv_staked.div(2)],
+      STAKE_DAO_YIELD_FARM,
+      testAccount,
+      testAccount
+    );
+
+    const sdam3CrvBalanceAfter = await sdam3Crv.balanceOf(testAccount);
+    assert(sdam3CrvBalanceAfter > sdam3CrvBalanceBefore);
   });
 });
 
@@ -125,6 +171,32 @@ async function initBalances(testAccount) {
     method: "hardhat_stopImpersonatingAccount",
     params: [accountWithFunds],
   });
+}
+
+/**
+ * Deploy and register Stake Dao adapter
+ */
+async function initStakeDaoFarm() {
+  // deploy Stake Dao adapter
+  const StakeDaoFarmAdapter = await ethers.getContractFactory("StakeDaoFarmAdapter");
+  tempAdapter = await StakeDaoFarmAdapter.deploy(controller.address);
+  await tempAdapter.deployed();
+  stakeDaoFarmAdapter = await ethers.getContractAt("IAdapter", tempAdapter.address, testSigner);
+
+  // add adapter and market data
+  await controller.addProtocolAdapter(
+    ethers.utils.formatBytes32String("Stake Dao farm adapter"),
+    stakeDaoAdapter.address
+  );
+  await controller.addMarket(
+    ethers.utils.formatBytes32String("Stake Dao farm adapter"),
+    STAKE_DAO_YIELD_FARM,
+    STAKE_DAO_YIELD_FARM,
+    STAKE_DAO_YIELD_FARM,
+    wMATIC,
+    [STAKE_DAO_LP],
+    [STAKE_DAO_TOKEN]
+  );
 }
 
 /**
