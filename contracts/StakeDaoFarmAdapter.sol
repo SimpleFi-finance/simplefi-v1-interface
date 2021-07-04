@@ -14,7 +14,7 @@ contract StakeDaoFarmAdapter is IAdapter {
         controllerAddress = _controllerAddress;
     }
 
-    mapping(address => uint256) public userToStakedLpTokens;
+    mapping(address => uint256) private userToStakedLpTokens;
 
     function invest(
         address onBehalfOf,
