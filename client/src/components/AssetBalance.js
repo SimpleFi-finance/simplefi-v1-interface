@@ -102,7 +102,7 @@ const AssetBalance = ({
               <p>|</p>
               <button onClick={() => setSwapAmount(Number(asset.balance * 0.75).toFixed(4)) }>75%</button>
               <p>|</p>
-              <button onClick={() => setSwapAmount(Number(asset.balance * 1).toFixed(4)) }>max</button>
+              <button onClick={() => setSwapAmount(Number(asset.balance * 0.98).toFixed(4)) }>max</button>
             </div>
           </>
           :

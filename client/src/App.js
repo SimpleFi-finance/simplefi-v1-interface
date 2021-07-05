@@ -12,7 +12,7 @@ import {
 } from './utils/hooks';
 
 import SimplefiLogo from './assets/logos/simplefi-logotype.png';
-import TesserLogo from './assets/tesserLogo.jpg'
+
 import {
   Dashboard
 } from './containers';
@@ -140,7 +140,7 @@ function App(props) {
           </div>
         }
       </NavBar>
-      {address && injectedProvider ?
+      {address && injectedProvider &&
         <Dashboard
           address={address}
           userSigner={userSigner}
@@ -148,8 +148,6 @@ function App(props) {
           provider={injectedProvider}
           loadWeb3Modal={loadWeb3Modal}
         />
-        :
-        <img src={TesserLogo} alt="tesser"/>
       }
     </AppSt>
   );
