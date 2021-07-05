@@ -9,14 +9,13 @@ import "./oz/token/ERC20/utils/SafeERC20.sol";
 import "./oz/utils/Address.sol";
 import "./utils/IUniswapV2Router02.sol";
 import "./utils/IWETH.sol";
-import './utils/UniswapV2Library.sol';
+import "./utils/UniswapV2Library.sol";
 
 contract Controller is Ownable {
     using SafeERC20 for IERC20;
 
     // uint256 constant ratioPrecision = 10000;
-    uint256 private constant deadline =
-        0xf000000000000000000000000000000000000000000000000000000000000000;
+    uint256 private constant deadline = 0xf000000000000000000000000000000000000000000000000000000000000000;
     address private constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address private constant ADDRESS_ZERO = 0x0000000000000000000000000000000000000000;
 
@@ -391,9 +390,9 @@ contract Controller is Ownable {
             );
 
             amountAfterDepositing = _depositToIntermediateMarket(
-                fromInputTokens, 
-                amounts, 
-                tokenToBuy, 
+                fromInputTokens,
+                amounts,
+                tokenToBuy,
                 depositFromTokens
             );
         }
@@ -404,7 +403,7 @@ contract Controller is Ownable {
                 toInputTokenAmounts[j] = amounts[foundToTokens[j] - 1];
             }
             if (toInputTokens[j] == tokenToBuy) {
-                toInputTokenAmounts[j] = amountBought + amountAfterDepositing;
+                toInputTokenAmounts[j] = toInputTokenAmounts[j] + amountBought + amountAfterDepositing;
             }
         }
     }
@@ -485,8 +484,7 @@ contract Controller is Ownable {
         bool borrow
     ) external returns (uint256[] memory amountsWithdrawn) {
         IAdapter adapter = _getAdapterForMarket(from);
-        return
-            _withdraw(adapter, from, amounts, borrow, msg.sender, msg.sender);
+        return _withdraw(adapter, from, amounts, borrow, msg.sender, msg.sender);
     }
 
     function deposit(
@@ -506,7 +504,7 @@ contract Controller is Ownable {
     ) external returns (uint256[] memory amountsDeposited) {
         Market memory toMarket = markets[to];
         IAdapter adapter = _getAdapterForMarket(to);
-    
+
         // Swap tokens as required
         uint256[] memory toInputTokenAmounts = _swapTokens(
             tokens,
@@ -531,7 +529,7 @@ contract Controller is Ownable {
     ) external payable returns (uint256[] memory amountsDeposited) {
         Market memory toMarket = markets[to];
         IAdapter adapter = _getAdapterForMarket(to);
-        
+
         address[] memory tokens = new address[](1);
         uint256[] memory amounts = new uint256[](1);
 
@@ -540,7 +538,6 @@ contract Controller is Ownable {
 
         IWETH marketWETH = IWETH(toMarket.weth);
         marketWETH.deposit{value: msg.value}();
-        marketWETH.approve(address(adapter), msg.value);
 
         // Swap tokens as required
         uint256[] memory toInputTokenAmounts = _swapTokens(

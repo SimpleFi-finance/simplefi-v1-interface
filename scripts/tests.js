@@ -172,15 +172,15 @@ async function main() {
     account = accounts[0];
     console.log("Account address", account.address);
 
-    controller = await ethers.getContractAt("Controller", "0x4f42528B7bF8Da96516bECb22c1c6f53a8Ac7312");
+    controller = await ethers.getContractAt("Controller", "0xc1EeD9232A0A44c2463ACB83698c162966FBc78d");
 
-    //await depositETHToAave();
+    await depositETHToAave();
     //await depositETHToDAIAave();
     //await depositDAItoAave();
     //await migrateFromETHAaveToDAIAave();
     //await depositETHToCurveAavePool();
     //await depositCurveLPTokenToStakeDAO();
-    await depositETHToStakeDAO();
+    //await depositETHToStakeDAO();
 }
 
 // We recommend this pattern to be able to use async/await everywhere
