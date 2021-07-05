@@ -215,7 +215,9 @@ async function main() {
     console.log("Account address", account.address);
 
     controller = await ethers.getContractAt("Controller", "0x124dDf9BdD2DdaD012ef1D5bBd77c00F05C610DA");
-
+    await buy(DAI, '' + 100 * (10**18))
+    await buy(USDC, '' + 100 * (10**6))
+    await buy(USDT, '' + 100 * (10**6))
     //await depositETHToAave();
     //await depositETHToDAIAave();
     //await depositDAItoAave();

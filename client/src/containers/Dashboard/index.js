@@ -24,6 +24,8 @@ import {
 import { ethers } from 'ethers';
 import IERC20 from '../../utils/helpers/IERC20.json'
 import CURVE_ABI from '../../utils/helpers/curveGaugeAbi.json'
+import { TESSER_CONTRACT } from '../../constants.js';
+
 const initState = {
   from: {
     asset: {},
@@ -37,7 +39,7 @@ const initState = {
 const isMarket = (asset) => {
   return (asset.type === 'LP' || asset.type === 'Farm')
 }
-const TESSER_CONTRACT = "0xF45B1CdbA9AACE2e9bbE80bf376CE816bb7E73FB"
+
 const approveConn = async (token, user, amount, provider) => {
   const erc20 = new ethers.Contract(token, IERC20, provider);
   await erc20.approve(user, amount);
@@ -131,13 +133,16 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
   const fromSelected = !!(swapSelection.from.asset !== {} && swapSelection.from.value && swapSelection.from.value > 0)
   const toSelected = swapSelection.to.asset !== {}
   const buttonDisabled = !(fromSelected && toSelected);
-  //TODO transaction tracking 
+
+
+  // migrate from prot to prot but not 
+  // deposit 
   const tesserInvestments = async () => {
     let transaction
     setTesser(!tesserStarted)
     setModal({ state: true })
-    const fromAddress = swapSelection.from.asset.outputToken || swapSelection.from.asset.address;
-    const toAddress = swapSelection.to.asset.outputToken || swapSelection.to.asset.address
+    let fromAddress = swapSelection.from.asset.outputToken || swapSelection.from.asset.address;
+    const toAddress = swapSelection.to.asset.outputToken || swapSelection.to.asset.address;
     if (isMarket(swapSelection.to.asset)) {
       if (isMarket(swapSelection.from.asset)
         && !swapSelection.to.asset.inputTokens.includes(fromAddress)
@@ -145,14 +150,14 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
       ) {
         // migrate
         console.log('migrate')
-
+        if (swapSelection.from.asset.address === "0x68456B298c230415E2DE7aD4897A79Ee3f1A965a") fromAddress = "0x445FE580eF8d70FF569aB36e80c647af338db351"
         const adapterAddressFrom = await TesserController.getAdapterAddressForMarket(fromAddress);
-        console.log(adapterAddressFrom)
         const bigInt = '' + (swapSelection.from.value * (10 ** swapSelection.from.asset.decimals))
-        await approveConn(fromAddress, adapterAddressFrom, bigInt, userSigner)
+        await approveConn(fromAddress, adapterAddressFrom, bigInt, userSigner);
+        
         transaction = await TesserController.migrate(
           fromAddress,
-          toAddress,
+          swapSelection.to.asset.address,
           [bigInt],
           false,
           false
@@ -179,10 +184,10 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
         // deposit or depositOtherTokens
         if (swapSelection.to.asset.inputTokens.includes(fromAddress)) {
           const bigInt = '' + (swapSelection.from.value * (10 ** swapSelection.from.asset.decimals))
-          const adapterAddressTo = await TesserController.getAdapterAddressForMarket(toAddress);
+          const adapterAddressTo = await TesserController.getAdapterAddressForMarket(swapSelection.to.asset.address);
           await approveConn(fromAddress, adapterAddressTo, bigInt, userSigner)
           transaction = await TesserController.deposit(
-            toAddress,
+            fromAddress,
             [bigInt],
             false
           )

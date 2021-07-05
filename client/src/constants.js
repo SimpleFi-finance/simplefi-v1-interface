@@ -147,3 +147,4 @@ export const NETWORK = chainId => {
   }
 };
 
+export const TESSER_CONTRACT = "0x4ff1f64683785E0460c24A4EF78D582C2488704f";
