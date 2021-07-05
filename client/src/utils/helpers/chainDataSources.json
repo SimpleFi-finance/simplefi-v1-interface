@@ -169,12 +169,12 @@
       "address": "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c",
       "outputToken": "0x19793b454d3afc7b454f206ffe95ade26ca6912c",
       "inputTokens": ["0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171"],
-      "decimals": 6,
+      "decimals": 18,
       "name": "am3CRV-gauge",
       "description": "Curve farm for the Aave DAI pool LP",
       "symbol": "am3CRV-gauge",
       "abi": "curveGaugeAbi",
-      "type": "farm"
+      "type": "Farm"
     },
     {
       "id": "usdc-usdt-sushi",

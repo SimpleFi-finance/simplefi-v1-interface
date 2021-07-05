@@ -37,7 +37,7 @@ const initState = {
 const isMarket = (asset) => {
   return (asset.type === 'LP' || asset.type === 'Farm')
 }
-const TESSER_CONTRACT = "0x01cf58e264d7578D4C67022c58A24CbC4C4a304E"
+const TESSER_CONTRACT = "0xF45B1CdbA9AACE2e9bbE80bf376CE816bb7E73FB"
 const approveConn = async (token, user, amount, provider) => {
   const erc20 = new ethers.Contract(token, IERC20, provider);
   await erc20.approve(user, amount);
@@ -144,12 +144,15 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
         && !swapSelection.from.asset.inputTokens.includes(toAddress)
       ) {
         // migrate
+        console.log('migrate')
+
         const adapterAddressFrom = await TesserController.getAdapterAddressForMarket(fromAddress);
+        console.log(adapterAddressFrom)
         const bigInt = '' + (swapSelection.from.value * (10 ** swapSelection.from.asset.decimals))
         await approveConn(fromAddress, adapterAddressFrom, bigInt, userSigner)
         transaction = await TesserController.migrate(
           fromAddress,
-          swapSelection.to.asset.address,
+          toAddress,
           [bigInt],
           false,
           false
@@ -185,14 +188,14 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
           )
         } else {
           console.log('depositOtherToken')
-          const bigInt = '' + (swapSelection.from.value * (10 ** swapSelection.from.asset.decimals))
-          const adapterAddressTo = await TesserController.getAdapterAddressForMarket(toAddress);
-          await approveConn(fromAddress, adapterAddressTo, bigInt, userSigner)
-          transaction = await TesserController.deposit(
-            toAddress,
-            [bigInt],
-            false
-          )
+          // const bigInt = '' + (swapSelection.from.value * (10 ** swapSelection.from.asset.decimals))
+          // const adapterAddressTo = await TesserController.getAdapterAddressForMarket(toAddress);
+          // await approveConn(fromAddress, adapterAddressTo, bigInt, userSigner)
+          // transaction = await TesserController.deposit(
+          //   toAddress,
+          //   [bigInt],
+          //   false
+          // )
         }
       }
     } else {
@@ -205,6 +208,7 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
     }
 
     const receipt = await transaction.wait()
+    console.log(receipt)
     if (receipt.status === 1) {
       setTimeout(() => {
         getBalances(tokens, 'tokens')
@@ -270,23 +274,26 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
       </TesserModalSt>
     );
   };
+  const filteredData = showStakeDao
+  ? {
+    tokens: [...tokens],
+    protocols: [...investmentsData.protocols].filter(prot => prot.address !== "0x361a5a4993493ce00f61c32d4ecca5512b82ce90"),
+    investments: [...investments]
+  }
+  :
+  {
+    tokens: [...tokens],
+    protocols: [...investmentsData.protocols],
+    investments: [...investments]
+  }
+
   const selectionModal = () => {
     return <SelectionModal
         investmentsData={filteredData}
         setSwapAsset={(asset) => setSwapAsset(asset, modal.direction)}
     />
   }
-  const filteredData = showStakeDao
-    ? {
-      tokens: [...tokens],
-      protocols: [...investmentsData.protocols].filter(prot => prot.address !== "0x361a5a4993493ce00f61c32d4ecca5512b82ce90"),
-      investments: [...investments]
-    }
-    : {
-      tokens: [...tokens],
-      protocols: [...investmentsData.protocols],
-      investments: [...investments]
-    }
+ 
   
   const ModalContent = tesserStarted
     ? tesseringModal()
