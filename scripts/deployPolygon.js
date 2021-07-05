@@ -109,19 +109,21 @@ async function setupAaveMarkets(controller) {
 
 async function setupCurveMarkets(controller) {
     const CURVE_AAVE_POOL = "0x445FE580eF8d70FF569aB36e80c647af338db351";
+    const CURVE_AAVE_GAUGE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c";
+    const CURVE_AAVE_LP_TOKEN = "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171";
     const DAI = "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063";
     const USDC = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174";
     const USDT = "0xc2132d05d31c914a87c6611c10748aeb04b58e8f";
-    const CURVE_AAVE_LP_TOKEN = "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171";
     const wMATIC = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
     const CRV = "0x172370d5cd63279efa6d502dab29171933a610af";
 
+    // Setup pools
     const CurveAdapter = await ethers.getContractFactory("CurveAdapter");
     const curveAdapter = await CurveAdapter.deploy(controller.address);
     await curveAdapter.deployed();
     console.log("Curve adapter deployed to: ", curveAdapter.address);
 
-    const curveProtocolName = ethers.utils.formatBytes32String("Curve AAVE pool");
+    const curveProtocolName = ethers.utils.formatBytes32String("Curve AAVE Pool");
     await controller.addProtocolAdapter(curveProtocolName, curveAdapter.address);
 
     await controller.addMarket(
@@ -131,6 +133,25 @@ async function setupCurveMarkets(controller) {
         CURVE_AAVE_LP_TOKEN,
         wMATIC,
         [DAI, USDC, USDT],
+        [wMATIC, CRV]
+    );
+
+    // Setup guages
+    const CurveGaugeAdapter = await ethers.getContractFactory("CurveGaugeAdapter");
+    const curveGuageAdapter = await CurveGaugeAdapter.deploy(controller.address);
+    await curveGuageAdapter.deployed();
+    console.log("Curve guage adapter deployed to: ", curveGuageAdapter.address);
+
+    const curveGuageProtocolName = ethers.utils.formatBytes32String("Curve AAVE Pool Guage");
+    await controller.addProtocolAdapter(curveGuageProtocolName, curveGuageAdapter.address);
+    
+    await controller.addMarket(
+        curveGuageProtocolName,
+        CURVE_AAVE_GAUGE,
+        CURVE_AAVE_GAUGE,
+        CURVE_AAVE_GAUGE,
+        wMATIC,
+        [CURVE_AAVE_LP_TOKEN],
         [wMATIC, CRV]
     );
 }
@@ -147,7 +168,7 @@ async function setupStakeDAOMarkets(controller) {
     console.log("StakeDAO adapter deployed to: ", stakeDaoAdapter.address);
 
     const stakeDaoProtocolName = ethers.utils.formatBytes32String("Stake Dao pool");
-    await controller.addProtocolAdapter(stakeDaoProtocolName,stakeDaoAdapter.address);
+    await controller.addProtocolAdapter(stakeDaoProtocolName, stakeDaoAdapter.address);
 
     await controller.addMarket(
         stakeDaoProtocolName,

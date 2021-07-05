@@ -37,6 +37,7 @@ const aDAI = "0x27F8D03b3a2196956ED754baDc28D73be8830A6e";
 
 const CURVE_AAVE_POOL = "0x445FE580eF8d70FF569aB36e80c647af338db351";
 const CURVE_AAVE_LP_TOKEN = "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171";
+const CURVE_AAVE_GAUGE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c";
 const CRV = "0x172370d5cd63279efa6d502dab29171933a610af";
 
 const STAKE_DAO_LP = "0x7d60F21072b585351dFd5E8b17109458D97ec120";
@@ -167,20 +168,63 @@ async function depositETHToStakeDAO() {
     console.log("Balance of stakeDaoLPToken: ", (await stakeDaoLPTokenContract.balanceOf(account.address)).toString());
 }
 
+async function depositETHToCurveGuage() {
+    const value = ethers.utils.parseEther("10");
+    await controller.depositETH(
+        CURVE_AAVE_GAUGE,
+        false,
+        {
+            value: value
+        }
+    );
+
+    const curveGuageLPTokenContract = await ethers.getContractAt("IERC20", CURVE_AAVE_GAUGE);
+    console.log("Balance of Curve Guage Token LP Token: ", (await curveGuageLPTokenContract.balanceOf(account.address)).toString());
+}
+
+async function depositCurveLPTokenToCurveGuage() {
+    const value = ethers.utils.parseEther("10");
+    await controller.depositETH(
+        CURVE_AAVE_POOL,
+        false,
+        {
+            value: value
+        }
+    );
+
+    const curveLPTokenContract = await ethers.getContractAt("IERC20", CURVE_AAVE_LP_TOKEN);
+    const curveLPTokenBalance = await curveLPTokenContract.balanceOf(account.address);
+    console.log("Depositing CurveLPToken to Curve Guage: ", (await curveLPTokenContract.balanceOf(account.address)).toString());
+
+    const curveGuageAdapter = await controller.getAdapterAddressForMarket(CURVE_AAVE_GAUGE);
+    await approve(CURVE_AAVE_LP_TOKEN, curveGuageAdapter, curveLPTokenBalance);
+
+    await controller.deposit(
+        CURVE_AAVE_GAUGE,
+        [curveLPTokenBalance],
+        false
+    );
+
+    const curveGuageLPTokenContract = await ethers.getContractAt("IERC20", CURVE_AAVE_GAUGE);
+    console.log("Balance of Curve Guage Token LP Token: ", (await curveGuageLPTokenContract.balanceOf(account.address)).toString());
+}
+
 async function main() {
     accounts = await ethers.getSigners();
     account = accounts[0];
     console.log("Account address", account.address);
 
-    controller = await ethers.getContractAt("Controller", "0xc1EeD9232A0A44c2463ACB83698c162966FBc78d");
+    controller = await ethers.getContractAt("Controller", "0x124dDf9BdD2DdaD012ef1D5bBd77c00F05C610DA");
 
-    await depositETHToAave();
+    //await depositETHToAave();
     //await depositETHToDAIAave();
     //await depositDAItoAave();
     //await migrateFromETHAaveToDAIAave();
     //await depositETHToCurveAavePool();
     //await depositCurveLPTokenToStakeDAO();
     //await depositETHToStakeDAO();
+    //await depositCurveLPTokenToCurveGuage();
+    await depositETHToCurveGuage();
 }
 
 // We recommend this pattern to be able to use async/await everywhere
