@@ -50,6 +50,7 @@ export default function Address(props) {
           target="_blank"
           href={etherscanLink}
           rel="noopener noreferrer"
+          style={{color: 'white'}}
         >
           {displayAddress}
         </a>
@@ -62,6 +63,7 @@ export default function Address(props) {
           target="_blank"
           href={etherscanLink}
           rel="noopener noreferrer"
+          style={{color: 'white'}}
         >
           {displayAddress}
         </a>
@@ -85,6 +87,7 @@ export default function Address(props) {
         verticalAlign: "middle",
         paddingLeft: 5,
         margin: 'auto',
+        color: 'white',
         fontSize: props.fontSize
           ? props.fontSize
           : 28

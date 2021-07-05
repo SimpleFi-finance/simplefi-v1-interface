@@ -4,7 +4,7 @@ import Address from './Address'
 import styled from 'styled-components'
 
 const AccountSt = styled.div`
-  border: 1px solid #5F40C4;
+  border: 1px solid white;
   width: max-content;
   height: min-content;
   border-radius: 30px;

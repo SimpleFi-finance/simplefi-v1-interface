@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 
 const AssetLogo = ({ logo, height = '25px', width = '25px' }) => {
-  console.log(logo)
   const [image, setImage] = useState(null)
   useEffect(() => {
     if (logo) {

@@ -1,49 +1,44 @@
 {
   "tokens": [
     {
-      "id": "0x172370d5cd63279efa6d502dab29171933a610af",
-      "address": "0x172370d5cd63279efa6d502dab29171933a610af",
-      "name": "Curve",
-      "logo": "CRV-logo.png",
-      "decimals": 18,
-      "symbol": "CRV",
-      "abi": "IERC20"
-    },
-    {
       "id": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
       "address": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
       "name": "wrapped Matic",
-      "logo": "logo-polygon.png",
+      "logo": "wmatic-logo.png",
       "decimals": 18,
       "symbol": "WMATIC",
-      "abi": "IERC20"
+      "abi": "IERC20",
+      "type": "token"
     },
     {
-      "id": "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
-      "address": "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
-      "name": "WBTC",
-      "logo": "WBTC-logo.png",
+      "id": "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0",
+      "address": "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0",
+      "name": "Matic",
+      "logo": "logo-polygon.png",
       "decimals": 18,
-      "symbol": "WBTC",
-      "abi": "IERC20"
+      "symbol": "MATIC",
+      "abi": "IERC20",
+      "type": "token"
     },
     {
       "id": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
       "address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
       "name": "USDT",
       "logo": "USDT-logo.png",
-      "decimals": 18,
+      "decimals": 6,
       "symbol": "USDT",
-      "abi": "IERC20"
+      "abi": "IERC20",
+      "type": "token"
     },
     {
       "id": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
       "address": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
       "name": "USDC",
       "logo": "USDC-logo.png",
-      "decimals": 18,
+      "decimals": 6,
       "symbol": "USDC",
-      "abi": "IERC20"
+      "abi": "IERC20",
+      "type": "token"
     },
     {
       "id": "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
@@ -52,7 +47,8 @@
       "logo": "DAI-logo.png",
       "decimals": 18,
       "symbol": "DAI",
-      "abi": "IERC20"
+      "abi": "IERC20",
+      "type": "token"
     }
   ],
   "protocols": [
@@ -70,8 +66,7 @@
       "logo": "AAVE-logo.png",
       "decimals": 18,
       "symbol": "AAVE",
-      "abi": "",
-      "investments": ["aave-usdt", "aave-dai", "aave-usdc"]
+      "investments": ["aave-usdt", "aave-dai", "aave-usdc", "aave-wmatic"]
     },
     {
       "address": "0x361a5a4993493ce00f61c32d4ecca5512b82ce90",
@@ -79,7 +74,6 @@
       "logo": "STAKEDAO-logo.png",
       "decimals": 18,
       "symbol": "StakeDAO",
-      "abi": "",
       "investments": ["stakeDAO-curve.fi-dai-usdc-usdt"]
     },
     {
@@ -88,7 +82,6 @@
       "logo": "SUSHI-logo.png",
       "decimals": 18,
       "symbol": "SUSHI",
-      "abi": "",
       "investments": ["usdc-usdt-sushi", "usdc-dai-sushi"]
     },
     {
@@ -97,7 +90,6 @@
       "logo": "quickswap-logo.png",
       "decimals": 18,
       "symbol": "QUICK",
-      "abi": "",
       "investments": ["usdc-usdt-quick", "wmatic-usdc-quick"]
     }
   ],
@@ -115,20 +107,7 @@
       "description": "Aave DAI pool LP",
       "symbol": "am3CRV",
       "decimals": 18,
-      "abi": "",
       "type": "LP"
-    },
-    {
-      "id": "am3crv-gauge",
-      "address": "0x19793b454d3afc7b454f206ffe95ade26ca6912c",
-      "outputToken": "",
-      "inputTokens": ["0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171"],
-      "decimals": 18,
-      "name": "am3CRV-gauge",
-      "description": "Curve farm for the Aave DAI pool LP",
-      "symbol": "am3CRV-gauge",
-      "abi": "",
-      "type": "farm"
     },
     {
       "id": "aave-usdt",
@@ -136,10 +115,9 @@
       "outputToken": "0x60D55F02A771d515e077c9C2403a1ef324885CeC",
       "inputTokens": ["0xc2132D05D31c914a87C6611C10748AEb04B58e8F"],
       "name": "amUSDT",
-      "decimals": 18,
+      "decimals": 6,
       "description": "USDT deposit in Aave",
-      "symbol": "amUSD",
-      "abi": "",
+      "symbol": "amUSDT",
       "type": "LP"
     },
     {
@@ -148,10 +126,20 @@
       "outputToken": "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
       "inputTokens": ["0x2791bca1f2de4661ed88a30c99a7a9449aa84174"],
       "name": "amUSDC",
-      "decimals": 18,
+      "decimals": 6,
       "description": "USDC deposit in Aave",
-      "symbol": "amUSD",
-      "abi": "",
+      "symbol": "amUSDC",
+      "type": "LP"
+    },
+    {
+      "id": "aave-wmatic",
+      "address": "0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4",
+      "outputToken": "0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4",
+      "inputTokens": ["0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"],
+      "name": "amWMATIC",
+      "decimals": 18,
+      "description": "wMATIC deposit in Aave",
+      "symbol": "amWMatic",
       "type": "LP"
     },
     {
@@ -163,7 +151,6 @@
       "decimals": 18,
       "description": "DAI deposit in Aave",
       "symbol": "amDAI",
-      "abi": "",
       "type": "LP"
     },
     {
@@ -175,19 +162,32 @@
       "name": "StakeDAO Curve.fi amDAI/amUSDC/amUSDT",
       "description": "Passive Aave USD Strategy (Polygon)",
       "symbol": "sdam3CRV",
-      "abi": "",
       "type": "Farm"
+    },
+    {
+      "id": "am3crv-gauge",
+      "address": "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c",
+      "outputToken": "0x19793b454d3afc7b454f206ffe95ade26ca6912c",
+      "inputTokens": ["0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171"],
+      "decimals": 6,
+      "name": "am3CRV-gauge",
+      "description": "Curve farm for the Aave DAI pool LP",
+      "symbol": "am3CRV-gauge",
+      "abi": "curveGaugeAbi",
+      "type": "farm"
     },
     {
       "id": "usdc-usdt-sushi",
       "address": "0x4b1f1e2435a9c96f7330faea190ef6a7c8d70001",
       "outputToken": "0x4b1f1e2435a9c96f7330faea190ef6a7c8d70001",
-      "inputTokens": ["0x2791bca1f2de4661ed88a30c99a7a9449aa84174", "0xc2132d05d31c914a87c6611c10748aeb04b58e8f"],
+      "inputTokens": [
+        "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        "0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
+      ],
       "name": "Sushi: USDC-USDT",
       "decimals": 18,
       "description": "SushiSwap USDC-USDT Pool",
       "symbol": "SLP: USDC-USDT",
-      "abi": "",
       "type": "LP",
       "balance": "358.98"
     },
@@ -195,12 +195,14 @@
       "id": "usdc-dai-sushi",
       "address": "0xcd578f016888b57f1b1e3f887f392f0159e26747",
       "outputToken": "0xcd578f016888b57f1b1e3f887f392f0159e26747",
-      "inputTokens": ["0x2791bca1f2de4661ed88a30c99a7a9449aa84174", "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063"],
+      "inputTokens": [
+        "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063"
+      ],
       "name": "Sushi: USDC-DAI",
       "decimals": 18,
       "description": "SushiSwap USDC-DAI Pool",
       "symbol": "SLP: USDC-DAI",
-      "abi": "",
       "type": "LP",
       "balance": "450.30"
     },
@@ -209,11 +211,13 @@
       "address": "0x2cf7252e74036d1da831d11089d326296e64a728",
       "name": "Quick: USDC-USDT",
       "outputToken": "0x2cf7252e74036d1da831d11089d326296e64a728",
-      "inputTokens": ["0x2791bca1f2de4661ed88a30c99a7a9449aa84174","0xc2132d05d31c914a87c6611c10748aeb04b58e8f"],
+      "inputTokens": [
+        "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        "0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
+      ],
       "decimals": 18,
       "description": "QuickSwap USDC-USDT Pool",
       "symbol": "QLP: USDC-USDT",
-      "abi": "",
       "type": "LP",
       "balance": "1275.34"
     },
@@ -222,11 +226,13 @@
       "address": "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827",
       "name": "Quick: WMATIC-USDC",
       "outputToken": "0x6e7a5fafcec6bb1e78bae2a1f0b612012bf14827",
-      "inputTokens": ["0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270","0x2791bca1f2de4661ed88a30c99a7a9449aa84174"],
+      "inputTokens": [
+        "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+        "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
+      ],
       "decimals": 18,
       "description": "QuickSwap WMATIC-USDC Pool",
       "symbol": "QLP: WMATIC-USDC",
-      "abi": "",
       "type": "LP",
       "balance": "40"
     }

@@ -4,14 +4,15 @@ import Web3Modal from 'web3modal';
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import React, { useCallback, useEffect, useState } from "react";
 import { ethers } from 'ethers';
-import { NETWORKS } from "./constants";
+import {
+  NETWORKS } from "./constants";
 import { Account } from './components'
 import {
   useUserSigner
 } from './utils/hooks';
 
-import SimplefiLogo from './assets/logos/simplefi-logotype.png'
-
+import SimplefiLogo from './assets/logos/simplefi-logotype.png';
+import TesserLogo from './assets/tesserLogo.jpg'
 import {
   Dashboard
 } from './containers';
@@ -19,22 +20,27 @@ import {
 import {
   NavBar,
   Button
-} from './components/UI'
+} from './components/UI';
 
 const AppSt = styled.div`
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(#ED40A5, white);
+  
 `;
 
+const mainnetInfura = navigator.onLine ? new ethers.providers.StaticJsonRpcProvider("https://mainnet.infura.io/v3/" + process.env.REACT_APP_INFURA_PROJECT_ID) : null;
+  
 const web3Modal = new Web3Modal({
-  // network: "mainnet", // optional
   cacheProvider: true, // optional
   providerOptions: {
     walletconnect: {
       package: WalletConnectProvider, // required
       options: {
         infuraId: process.env.REACT_APP_INFURA_PROJECT_ID,
+        // rpc: {
+        //   1: `https://mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_PROJECT_ID}`,
+        //   137: `https://polygon-mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_PROJECT_ID}`
+        // }
       },
     },
   },
@@ -47,18 +53,24 @@ const logoutOfWeb3Modal = async () => {
   }, 1);
 };
 
-const targetNetwork = NETWORKS.matic;
+// cahnge if mainnet//matic
+
+const targetNetwork = NETWORKS.localhost;
+
 const localProviderUrl = targetNetwork.rpcUrl;
 const localProvider = new ethers.providers.StaticJsonRpcProvider(localProviderUrl);
 
 const blockExplorer = targetNetwork.blockExplorer;
 
+// ------------
+
 function App(props) {
   const [injectedProvider, setInjectedProvider] = useState();
   const [address, setAddress] = useState();
+  const [showStakeDAO, setStakeDAO] = useState(false);
 
   const userSigner = useUserSigner(injectedProvider, localProvider);
-
+  
   useEffect(() => {
     async function getAddress() {
       if (userSigner) {
@@ -69,7 +81,6 @@ function App(props) {
     getAddress();
   }, [userSigner]);
 
-  const mainnetInfura = navigator.onLine ? new ethers.providers.StaticJsonRpcProvider("https://mainnet.infura.io/v3/" + process.env.REACT_APP_INFURA_PROJECT_ID) : null;
   const mainnetProvider = mainnetInfura;
 
   const loadWeb3Modal = useCallback(async () => {
@@ -101,7 +112,7 @@ function App(props) {
   return (
     <AppSt>
       <NavBar>
-        <img src={SimplefiLogo} alt="simplefi" />
+        <img src={SimplefiLogo} alt="simplefi" onClick={() => setStakeDAO(!showStakeDAO)}/>
         {injectedProvider
           ?
           <Account
@@ -129,12 +140,17 @@ function App(props) {
           </div>
         }
       </NavBar>
-      <Dashboard
-        address={address}
-        userSigner={userSigner}
-        provider={injectedProvider}
-        loadWeb3Modal={loadWeb3Modal}
-      />
+      {address && injectedProvider ?
+        <Dashboard
+          address={address}
+          userSigner={userSigner}
+          showStakeDao={showStakeDAO}
+          provider={injectedProvider}
+          loadWeb3Modal={loadWeb3Modal}
+        />
+        :
+        <img src={TesserLogo} alt="tesser"/>
+      }
     </AppSt>
   );
 }

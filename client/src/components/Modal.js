@@ -9,6 +9,8 @@ const OverlaySt = styled.div`
   z-index: 2;
   height: 100%;
   width: 100%;
+  opacity: ${({ show }) => !!show ? '0.7' : '0'};
+  transition: opacity 01s;
 `;
 
 const ModalSt = styled.div`
@@ -24,16 +26,21 @@ const ModalSt = styled.div`
   display: flex;
   flex-direction: column;
   z-index: 3;
+  opacity: ${({ show }) => !!show ? '1' : '0'};
+  transition: opacity 1s;
 `;
 
-const Modal = ({closeModal, content}) => {
+const Modal = ({ show, closeModal, content }) => {
+  
   return (
     <>
       <OverlaySt
+        show={show}
         onClick={() => closeModal()}
       >
       </OverlaySt>
-      <ModalSt>
+      <ModalSt show={show}>
+        
         {content}
       </ModalSt>
     </>

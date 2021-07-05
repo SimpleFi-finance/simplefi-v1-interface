@@ -70,7 +70,6 @@ const AssetBalance = ({
   direction,
   provider
 }) => {
-
   return (
     <AssetSt>
       <div>
@@ -79,7 +78,7 @@ const AssetBalance = ({
           clickAction={clickAction}
           provider={provider}
         />
-        {direction !== 'to' && !!provider && 
+        {direction !== 'to' && !!provider && !!asset.name &&
           <AmountSwap
             type='number'
             onChange={(e) => setSwapAmount(e.target.value)}
@@ -91,11 +90,11 @@ const AssetBalance = ({
           </AmountSwap>
         }
       </div>
-      {asset?.name  &&
+      {asset !== {} && !!asset.name &&
         <BalanceSelector>
         {direction !== 'to' ?
           <>
-            <p>Balance: {Number(asset.balance).toFixed(4) || '0.0'} {asset.symbol}</p>
+            <p>Balance: {Number(asset.balance).toFixed(4)|| '0.0'} {asset.symbol}</p>
             <div>
               <button onClick={() => setSwapAmount(Number(asset.balance * 0.25).toFixed(4)) }>25%</button>
               <p>|</p>

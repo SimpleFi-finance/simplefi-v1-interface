@@ -81,7 +81,7 @@ const ProtocolInvestments = ({ protocol, investments, onSelect }) => {
             <h4>{inv.name}</h4>
             {inv.description && <p>{inv.description}</p>}
           </div>
-          <h4> {Number(inv.balance).toFixed(4) || '0.0'}</h4>
+          <h4> {(Math.round(inv.balance * 10000) / 10000).toFixed(4) || '0.0'}</h4>
         </InvestmentSt>
       ))}
     </ProtocolInvestmentsSt>
