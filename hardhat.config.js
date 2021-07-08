@@ -21,9 +21,11 @@ module.exports = {
     hardhat: {
       forking: {
         url: `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,
-        blockNumber: 16058500,
       },
     },
+    localhost: {
+      timeout: 600000
+    }
   },
   solidity: {
     version: "0.8.5",

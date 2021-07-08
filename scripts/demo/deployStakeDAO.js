@@ -26,23 +26,10 @@ async function setupStakeDAOMarkets(controller) {
     );
 }
 
-async function deployPolygon() {
-    controller = await ethers.getContractAt("Controller", "0x4f42528B7bF8Da96516bECb22c1c6f53a8Ac7312");
-
+async function deployStakeDAO(controller) {
     await setupStakeDAOMarkets(controller);
-
-    return controller;
 }
 
-async function main() {
-    await deployPolygon();
+module.exports = {
+    deployStakeDAO
 }
-
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
