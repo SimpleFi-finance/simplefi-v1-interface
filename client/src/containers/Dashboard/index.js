@@ -50,7 +50,7 @@ const approveConn = async (token, user, amount, provider) => {
   await erc20.approve(user, amount);
 }
 
-const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao }) => {
+const Dashboard = ({ address, provider, userSigner, loadWeb3Modal }) => {
   const [modal, setModal] = useState({ state: false, direction: null });
   const [swapSelection, setSwapSelection] = useState(initState);
   const [tokens, setTokens] = useState([]);
@@ -264,9 +264,7 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
     return <SelectionModal
         investmentsData={{
           tokens: tokens,
-          protocols: showStakeDao
-            ? [...investmentsData.protocols]
-            : [...investmentsData.protocols].filter(prot => prot.address !== "0x361a5a4993493ce00f61c32d4ecca5512b82ce90"),
+          protocols: [...investmentsData.protocols],
           investments: investments
         }}
         setSwapAsset={(asset) => setSwapAsset(asset, modal.direction)}

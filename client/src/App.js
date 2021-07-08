@@ -67,7 +67,6 @@ const blockExplorer = targetNetwork.blockExplorer;
 function App(props) {
   const [injectedProvider, setInjectedProvider] = useState();
   const [address, setAddress] = useState();
-  const [showStakeDAO, setStakeDAO] = useState(false);
 
   const userSigner = useUserSigner(injectedProvider, localProvider);
   
@@ -112,7 +111,7 @@ function App(props) {
   return (
     <AppSt>
       <NavBar>
-        <img src={SimplefiLogo} alt="simplefi" onClick={() => setStakeDAO(!showStakeDAO)}/>
+        <img src={SimplefiLogo} alt="simplefi"/>
         {injectedProvider
           ?
           <Account
@@ -144,7 +143,6 @@ function App(props) {
         <Dashboard
           address={address}
           userSigner={userSigner}
-          showStakeDao={showStakeDAO}
           provider={injectedProvider}
           loadWeb3Modal={loadWeb3Modal}
         />
