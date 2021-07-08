@@ -66,10 +66,14 @@ const AssetBalance = ({
   asset,
   clickAction,
   swapAmount,
+  balances,
   setSwapAmount,
   direction,
   provider
 }) => {
+  const currBalance = balances.length && balances.find(inv => inv.id === asset.id);
+  const assetBalance = currBalance?.balance || asset.balance;
+
   return (
     <AssetSt>
       <div>
@@ -84,7 +88,7 @@ const AssetBalance = ({
             onChange={(e) => setSwapAmount(e.target.value)}
             value={swapAmount || '0.0'}
             min="0.00"
-            max={asset.balance}
+            max={assetBalance}
             placeholder="0.0"
           >
           </AmountSwap>
@@ -94,19 +98,19 @@ const AssetBalance = ({
         <BalanceSelector>
         {direction !== 'to' ?
           <>
-            <p>Balance: {Number(asset.balance).toFixed(4)|| '0.0'} {asset.symbol}</p>
+            <p>Balance: {Number(assetBalance).toFixed(4)|| '0.0'} {asset.symbol}</p>
             <div>
-              <button onClick={() => setSwapAmount(Number(asset.balance * 0.25).toFixed(4)) }>25%</button>
+              <button onClick={() => setSwapAmount(Number(assetBalance * 0.25).toFixed(4)) }>25%</button>
               <p>|</p>
-              <button onClick={() => setSwapAmount(Number(asset.balance * 0.5).toFixed(4)) }>50%</button>
+              <button onClick={() => setSwapAmount(Number(assetBalance * 0.5).toFixed(4)) }>50%</button>
               <p>|</p>
-              <button onClick={() => setSwapAmount(Number(asset.balance * 0.75).toFixed(4)) }>75%</button>
+              <button onClick={() => setSwapAmount(Number(assetBalance * 0.75).toFixed(4)) }>75%</button>
               <p>|</p>
-              <button onClick={() => setSwapAmount(Number(asset.balance * 0.98).toFixed(4)) }>max</button>
+              <button onClick={() => setSwapAmount(Number(assetBalance * 0.98).toFixed(4)) }>max</button>
             </div>
           </>
           :
-          <p> Current Balance: {Number(asset.balance).toFixed(4) || '0.0'} {asset.symbol}</p>
+          <p> Current Balance: {Number(assetBalance).toFixed(4) || '0.0'} {asset.symbol}</p>
         }
         </BalanceSelector>
       }
