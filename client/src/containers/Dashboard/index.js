@@ -23,7 +23,6 @@ import {
 } from './dashboard.style';
 import { ethers } from 'ethers';
 import IERC20 from '../../utils/helpers/IERC20.json'
-import CURVE_ABI from '../../utils/helpers/curveGaugeAbi.json'
 import { TESSER_CONTRACT } from '../../constants.js';
 
 const initState = {
@@ -40,12 +39,18 @@ const isMarket = (asset) => {
   return (asset.type === 'LP' || asset.type === 'Farm')
 }
 
+const getRandomIntInclusive = (min, max) => {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+  
 const approveConn = async (token, user, amount, provider) => {
   const erc20 = new ethers.Contract(token, IERC20, provider);
   await erc20.approve(user, amount);
 }
 
-const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao }) => {
+const Dashboard = ({ address, provider, userSigner, loadWeb3Modal }) => {
   const [modal, setModal] = useState({ state: false, direction: null });
   const [swapSelection, setSwapSelection] = useState(initState);
   const [tokens, setTokens] = useState([]);
@@ -55,31 +60,27 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
   const TesserController = new ethers.Contract(TESSER_CONTRACT, TesserContract, userSigner)
   
   const getBalances = async (data, type) => {
-    const assets = [...data];
-    for (let asset of assets) {
+    for (let asset of data) {
       if (asset.address === '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0') {
         const balance = await provider.getBalance(address)
         const formatBalance = ethers.utils.formatUnits(balance, asset.decimals);
-        asset['balance'] = formatBalance
-      } else if (asset.address === '0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c') {
-        const contractAddress = asset.address;
-        const contract = new ethers.Contract(contractAddress, CURVE_ABI, userSigner);
-        const balance = await contract.balanceOf(address);
-        const formatBalance = ethers.utils.formatUnits(balance, asset.decimals);
-        asset['balance'] = formatBalance || 0.0;
-      } else if (!asset.balance) {
+        asset['balance'] = formatBalance;
+      } else {
         const contractAddress = asset.outputToken || asset.address;
         const contract = new ethers.Contract(contractAddress, IERC20, provider);
-        const balance = await contract.balanceOf(address);
-        const formatBalance = ethers.utils.formatUnits(balance, asset.decimals);
+        let formatBalance = asset.balanceStored;
+        if (!asset.balanceStored) {
+          const balance = await contract.balanceOf(address);
+          formatBalance = ethers.utils.formatUnits(balance, asset.decimals);
+        }
         asset['balance'] = formatBalance;
       }
     }
 
     if (type === 'tokens') {
-      setTokens(assets);
+      setTokens((prevState) => (data));
     } else {
-      setInvestments(assets);
+      setInvestments((prevState) => (data));
     }
   }
 
@@ -88,8 +89,8 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
     if (address && !!provider) {
       const tokens = [...investmentsData.tokens];
       const investments = [...investmentsData.investments];
-      getBalances(tokens, 'tokens')
-      getBalances(investments, 'investments')
+      getBalances(tokens, 'tokens');
+      getBalances(investments, 'investments');
     }
   }, [address, provider]);
 
@@ -134,9 +135,6 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
   const toSelected = swapSelection.to.asset !== {}
   const buttonDisabled = !(fromSelected && toSelected);
 
-
-  // migrate from prot to prot but not 
-  // deposit 
   const tesserInvestments = async () => {
     let transaction
     setTesser(!tesserStarted)
@@ -152,7 +150,7 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
         console.log('migrate')
         if (swapSelection.from.asset.address === "0x68456B298c230415E2DE7aD4897A79Ee3f1A965a") fromAddress = "0x445FE580eF8d70FF569aB36e80c647af338db351"
         const adapterAddressFrom = await TesserController.getAdapterAddressForMarket(fromAddress);
-        const bigInt = '' + (swapSelection.from.value * (10 ** swapSelection.from.asset.decimals))
+        const bigInt = '' + (parseInt('' + swapSelection.from.value * (10 ** swapSelection.from.asset.decimals)));
         await approveConn(fromAddress, adapterAddressFrom, bigInt, userSigner);
         
         transaction = await TesserController.migrate(
@@ -167,11 +165,11 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
         //withdraw
         const adapterAddressFrom = await TesserController.getAdapterAddressForMarket(fromAddress);
         const toAddress = swapSelection.from.asset.outputToken || swapSelection.from.asset.address;
-        const bigInt = '' + (swapSelection.from.value * (10 ** swapSelection.from.asset.decimals))
+        const bigInt = '' + (parseInt('' + swapSelection.from.value * (10 ** swapSelection.from.asset.decimals)));
         await approveConn(toAddress, adapterAddressFrom, bigInt, userSigner)
         transaction = await TesserController.withdraw(toAddress, [bigInt], false)
-      } else if (swapSelection.from.asset.address === "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0"){
-        const bigInt = '' + (swapSelection.from.value * (10 ** swapSelection.from.asset.decimals))
+      } else if (swapSelection.from.asset.address === "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0") {
+        const bigInt = '' + (parseInt('' + swapSelection.from.value * (10 ** swapSelection.from.asset.decimals)));
         transaction = await TesserController.depositETH(
           toAddress,
           false,
@@ -183,11 +181,11 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
         console.log('deposit')
         // deposit or depositOtherTokens
         if (swapSelection.to.asset.inputTokens.includes(fromAddress)) {
-          const bigInt = '' + (swapSelection.from.value * (10 ** swapSelection.from.asset.decimals))
+          const bigInt = '' + (parseInt('' + swapSelection.from.value * (10 ** swapSelection.from.asset.decimals)));
           const adapterAddressTo = await TesserController.getAdapterAddressForMarket(swapSelection.to.asset.address);
           await approveConn(fromAddress, adapterAddressTo, bigInt, userSigner)
           transaction = await TesserController.deposit(
-            fromAddress,
+            toAddress,
             [bigInt],
             false
           )
@@ -207,43 +205,25 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
       // withdraw
       const adapterAddressFrom = await TesserController.getAdapterAddressForMarket(fromAddress);
       const toAddress = swapSelection.from.asset.outputToken || swapSelection.from.asset.address;
-      const bigInt = '' + (swapSelection.from.value * (10 ** swapSelection.from.asset.decimals))
+      const bigInt = '' + (parseInt('' + swapSelection.from.value * (10 ** swapSelection.from.asset.decimals)));
       await approveConn(toAddress, adapterAddressFrom, bigInt, userSigner)
       transaction = await TesserController.withdraw(toAddress, [bigInt], false)
     }
 
     const receipt = await transaction.wait()
     console.log(receipt)
+    await getBalances(tokens, 'tokens')
+    await getBalances(investments, 'investments')
     if (receipt.status === 1) {
-      setTimeout(() => {
-        getBalances(tokens, 'tokens')
-        getBalances(investments, 'investments')
-        setSwapSelection(initState)
-      }, 2000);
-      
-      setTimeout(() => {
-        setTesser(false)
+      setTimeout(async () => {
+        setSwapValue(0.0, 'from')
         setModal({ state: false })
-      }, 1000);
-      // refresh data
-      
+        setTesser(false)
+      }, 1000); 
     } else {
-      getBalances(tokens, 'tokens')
-      getBalances(investments, 'investments')
-      setTesser(false)
       setModal({ state: false })
-      // refresh data
-      setTimeout(() => {
-        setSwapSelection(initState)
-        
-      }, 500);
+      setTesser(false)
     }
-  }
-
-  const getRandomIntInclusive = (min, max) => {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
   };
   
   const tesseringModal = () => {
@@ -279,27 +259,18 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
       </TesserModalSt>
     );
   };
-  const filteredData = showStakeDao
-  ? {
-    tokens: [...tokens],
-    protocols: [...investmentsData.protocols].filter(prot => prot.address !== "0x361a5a4993493ce00f61c32d4ecca5512b82ce90"),
-    investments: [...investments]
-  }
-  :
-  {
-    tokens: [...tokens],
-    protocols: [...investmentsData.protocols],
-    investments: [...investments]
-  }
 
   const selectionModal = () => {
     return <SelectionModal
-        investmentsData={filteredData}
+        investmentsData={{
+          tokens: tokens,
+          protocols: [...investmentsData.protocols],
+          investments: investments
+        }}
         setSwapAsset={(asset) => setSwapAsset(asset, modal.direction)}
     />
   }
  
-  
   const ModalContent = tesserStarted
     ? tesseringModal()
     : selectionModal()
@@ -310,7 +281,7 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
     }
   }
 
-  return (
+  return (  
     <ContainerSt>
       {modal.state && 
         <Modal
@@ -323,6 +294,7 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
         <TitleSt> Tesser </TitleSt>
         <AssetBalance
           asset={swapSelection.from.asset}
+          balances={[...tokens, ...investments]}
           clickAction={() => openSelector('from')}
           swapAmount={swapSelection.from.value}
           setSwapAmount={(value) => setSwapValue(value, 'from')}
@@ -332,6 +304,7 @@ const Dashboard = ({ address, provider, userSigner, loadWeb3Modal, showStakeDao 
         <img src={SwitchIcon} alt=""/>
         <AssetBalance
           asset={swapSelection.to.asset}
+          balances={[...tokens, ...investments]}
           clickAction={() => openSelector('to')}
           direction={'to'}
           provider={provider}

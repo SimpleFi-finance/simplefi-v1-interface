@@ -4,7 +4,8 @@
   "description": "Rebalancer for DeFi protocols",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "test": "test",
+    "client": "cd client && npm start"
   },
   "author": "Tarun Bansal",
   "license": "ISC",

@@ -11,6 +11,16 @@
       "type": "token"
     },
     {
+      "id": "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+      "address": "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+      "name": "wrapped BTC",
+      "logo": "WBTC-logo.png",
+      "decimals": 8,
+      "symbol": "WBTC",
+      "abi": "IERC20",
+      "type": "token"
+    },
+    {
       "id": "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0",
       "address": "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0",
       "name": "Matic",
@@ -66,7 +76,7 @@
       "logo": "AAVE-logo.png",
       "decimals": 18,
       "symbol": "AAVE",
-      "investments": ["aave-usdt", "aave-dai", "aave-usdc", "aave-wmatic"]
+      "investments": ["aave-usdt", "aave-dai", "aave-usdc", "aave-wmatic", "aave-wbtc"]
     },
     {
       "address": "0x361a5a4993493ce00f61c32d4ecca5512b82ce90",
@@ -154,6 +164,17 @@
       "type": "LP"
     },
     {
+      "id": "aave-wbtc",
+      "address": "0x5c2ed810328349100A66B82b78a1791B101C9D61",
+      "outputToken": "0x5c2ed810328349100A66B82b78a1791B101C9D61",
+      "inputTokens": ["0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6"],
+      "name": "amWBTC",
+      "decimals": 8,
+      "description": "wBTC deposit in Aave",
+      "symbol": "amWBTC",
+      "type": "LP"
+    },
+    {
       "id": "stakeDAO-curve.fi-dai-usdc-usdt",
       "address": "0x68456B298c230415E2DE7aD4897A79Ee3f1A965a",
       "outputToken": "0x7d60F21072b585351dFd5E8b17109458D97ec120",
@@ -189,7 +210,7 @@
       "description": "SushiSwap USDC-USDT Pool",
       "symbol": "SLP: USDC-USDT",
       "type": "LP",
-      "balance": "358.98"
+      "balanceStored": "358.98"
     },
     {
       "id": "usdc-dai-sushi",
@@ -204,7 +225,7 @@
       "description": "SushiSwap USDC-DAI Pool",
       "symbol": "SLP: USDC-DAI",
       "type": "LP",
-      "balance": "450.30"
+      "balanceStored": "450.30"
     },
     {
       "id": "usdc-usdt-quick",
@@ -219,7 +240,7 @@
       "description": "QuickSwap USDC-USDT Pool",
       "symbol": "QLP: USDC-USDT",
       "type": "LP",
-      "balance": "1275.34"
+      "balanceStored": "1275.34"
     },
     {
       "id": "wmatic-usdc-quick",
@@ -234,7 +255,7 @@
       "description": "QuickSwap WMATIC-USDC Pool",
       "symbol": "QLP: WMATIC-USDC",
       "type": "LP",
-      "balance": "40"
+      "balanceStored": "40"
     }
   ]
 }
